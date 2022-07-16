@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import os
+import sys
 from Replidec_multi import bayes_classifier_batch,bayes_classifier_contig,bayes_classifier_genomes
 #import argparse
 from argparse import RawTextHelpFormatter,ArgumentParser
-import os
+
 
 current_work_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -51,8 +53,7 @@ parser.add_argument("-B", "--bp",default="-num_threads 3", dest="blastp_paramete
 args = parser.parse_args()
 
 
-#### main ###
-if __name__ == "__main__":
+def main():
     print("Using %s"%args.program)
     if args.program == "multiSeqAsOne":
         bayes_classifier_genomes(args.input_file, args.workdir, summaryfile=args.summary, threads=args.threads,
@@ -78,17 +79,6 @@ if __name__ == "__main__":
     else:
         print("Please check the vaild program (multiSeqAsOne|multiSeqEachAsOne|batch)")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#### main ###
+if __name__ == "__main__":
+    main()

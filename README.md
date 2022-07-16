@@ -1,12 +1,23 @@
-# bayes_classifier
+# Replidec: Replication Cycle Detector for Phages
 ## Aim
 
-use bayes classifier to predict virus lifestyle 
+Use bayes classifier combine with homology search to predict virus replication cycle
 
 ### Important: 
 
-    $PATH should have mmseqs and hmmsearch
+mmseqs, hmmsearch, blastp must set to $PATH, these software can equal or higher than version list below
 
+    MMseqs2 Version: 13.45111
+
+    HMMER 3.3.2 (Nov 2020)
+
+    Protein-Protein BLAST 2.5.0+
+
+```
+conda create -n replidec
+conda activate replidec
+conda install -c bioconda,anaconda "python>=3.8" mmseqs2 hmmer blast
+```
 ## Usage
 add the destination dir(where you clone the tool) in your path
 

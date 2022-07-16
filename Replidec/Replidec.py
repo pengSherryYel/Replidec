@@ -389,135 +389,135 @@ def bayes_classifier_single(inputfile, prefix, wd,
     return [prefix, inte_label, excision_label, pfam_label, p_total_temperate, p_total_lytic, bc_label, final_label, match_gene_number]
 
 
-def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary",
-         hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-3,
-         blastp_para="-num_threads 3",
-         hmmer_para="--noali --cpu 3",
-         mmseqs_para="-s 7 --max-seqs 1 --alignment-mode 3\
-                     --alignment-output-mode 0 --min-aln-len 40 --cov-mode 0 --greedy-best-hits 1 --threads 3"):
-
-    '''
-    Aim: batch predict lifestyle
-    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_creteria=1e-5,mmseq_creteria=1e-5)
-        inputfile: a tab seperate file contain two column.
-            first column: sample name;
-            second column: path of the protein file;
-        wd: work path where put the result
-        summaryfile: file name for summary of the predict output. location will be under the wd path
-        hmm_creteria: creteria to filter pfam evalue greater than x (default: 1e-5)
-        mmseqs_creteria: creteria to filter mmseqs evalue greater than x (default: 1e-5)
-        blastp_creteria: creteria to filter blastp evalue greater than x (default: 1e-5)
-    '''
-
-    mkdirs(wd)
-    opt = open(os.path.join(wd, summaryfile), "w")
-    header = "sample_name\tintegrase_number\texcisionase_number\tpfam_label\tbc_temperate\tbc_virulent\tbc_label\tfinal_label\tmatch_gene_number\tpath\n"
-    opt.write(header)
-
-    with open(inputfile) as f:
-        for line in f:
-            sample_name, path = line.strip("\n").split("\t")
-            res = bayes_classifier_single(
-                path, sample_name, wd, hmm_creteria, mmseqs_creteria,blastp_creteria,blastp_para,hmmer_para,mmseqs_para)
-            #prefix, inte_label, excision_label, pfam_label, p_total_temperate, p_total_lytic, bc_label, final_label = res
-            res.append(path)
-            opt.write("\t".join([str(i) for i in res])+"\n")
-            opt.flush()
-    opt.close()
-
-
-def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary",
-          hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-3,
-          blastp_para="-num_threads 3",
-          hmmer_para="--noali --cpu 3",
-          mmseqs_para="-s 7 --max-seqs 1 --alignment-mode 3\
-                      --alignment-output-mode 0 --min-aln-len 40 --cov-mode 0 --greedy-best-hits 1 --threads 3"):
-
-    '''
-    Aim: predict lifestyle for contig file
-    (WARNING: treat each *seq* as an indepent virus sequence, not suit for a genome contain multiple sequence)
-
-    Process: prodigal --> lifestyleBC
-
-    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_creteria=1e-5,mmseq_creteria=1e-5)
-        inputfile: contig file
-        wd: work path where put the result
-        summaryfile: file name for summary of the predict output. location will be under the wd path
-        hmm_creteria: creteria to filter pfam evalue greater than x (default: 1e-5)
-        mmseqs_creteria: creteria to filter mmseqs evalue greater than x (default: 1e-5)
-        blastp_creteria: creteria to filter blastp evalue greater than x (default: 1e-5)
-    '''
-
-    mkdirs(wd)
-    opt = open(os.path.join(wd, summaryfile), "w")
-    header = "sample_name\tintegrase_number\texcisionase_number\tpfam_label\tbc_temperate\tbc_virulent\tbc_label\tfinal_label\tmatch_gene_number\tpath\n"
-    opt.write(header)
-
-    for seq in SeqIO.parse(inputfile,"fasta"):
-        tmpfile="./%s.tmp"%seq.id
-        SeqIO.write(seq,tmpfile,"fasta")
-        faaFile = runProdigal(tmpfile, seq.id, "%s/BC_prodigal"%wd, program="meta", otherPara="-g 11")
-        res = ["sample_name"] + ['NA']*6 + [0]
-        if os.path.getsize(faaFile) != 0:
-            res = bayes_classifier_single(
-                path, sample_name, wd, hmm_creteria, mmseqs_creteria,blastp_creteria,blastp_para,hmmer_para,mmseqs_para)
-                #  faaFile, seq.id, wd, hmm_creteria, mmseqs_creteria)
-        #prefix, inte_label, excision_label, pfam_label, p_total_temperate, p_total_lytic, bc_label, final_label, match_gene_number = res
-        res.append(faaFile)
-        opt.write("\t".join([str(i) for i in res])+"\n")
-        opt.flush()
-        os.remove(tmpfile)
-    opt.close()
-
-
-def bayes_classifier_genomes(inputfile, wd, summaryfile="BC_predict.summary",
-           hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-3,
-           blastp_para="-num_threads 3",
-           hmmer_para="--noali --cpu 3",
-           mmseqs_para="-s 7 --max-seqs 1 --alignment-mode 3\
-                       --alignment-output-mode 0 --min-aln-len 40 --cov-mode 0 --greedy-best-hits 1 --threads 3"):
-    '''
-    Aim: predict lifestyle for one genome file which contain multiple seq
-    (WARNING: treat *inputfile* as an indepent virus sequence(no matter how many seq are there), suit for a genome contain multiple sequence)
-
-    Process: prodigal --> lifestyleBC
-
-    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-5)
-        inputfile: a tab seperate file contain two column.
-            first column: sample name;
-            second column: path of the genome file;
-        wd: work path where put the result
-        summaryfile: file name for summary of the predict output. location will be under the wd path
-        hmm_creteria: creteria to filter pfam evalue greater than x (default: 1e-5)
-        mmseqs_creteria: creteria to filter mmseqs evalue greater than x (default: 1e-5)
-        blastp_creteria: creteria to filter blastp evalue greater than x (default: 1e-5)
-    '''
-
-    mkdirs(wd)
-    opt = open(os.path.join(wd, summaryfile), "w")
-    header = "sample_name\tintegrase_number\texcisionase_number\tpfam_label\tbc_temperate\tbc_virulent\tbc_label\tfinal_label\tmatch_gene_number\tpath\n"
-    opt.write(header)
-
-    with open(inputfile) as f:
-        for line in f:
-            sample_name, path = line.strip("\n").split("\t")
-            faaFile = runProdigal(path, sample_name, "%s/BC_prodigal"%wd, program="meta", otherPara="-g 11")
-            res = [sample_name] + ['NA']*6 + [0]
-            if os.path.getsize(faaFile) != 0:
-                res = bayes_classifier_single(
-                     # faaFile, sample_name, wd, pfam_creteria, mmseqs_creteria)
-                    path, sample_name, wd, hmm_creteria, mmseqs_creteria,blastp_creteria,blastp_para,hmmer_para,mmseqs_para)
-            #prefix, inte_label, excision_label, pfam_label, p_total_temperate, p_total_lytic, bc_label, final_label, match_gene_number = res
-            res.append(faaFile)
-            opt.write("\t".join([str(i) for i in res])+"\n")
-            opt.flush()
-    opt.close()
-
-
-if __name__ == "__main__":
-    # for single predict
-    #bayes_classifier_single("./example/simulate_art_sample1.21.faa", "simulate_art_sample1.21", "./test")
-    # bayes_classifier_single("./example/simulate_art_sample1.1.faa","simulate_art_sample1.1","./test")
-    # bayes_classifier_single("./example/simulate_art_sample1.5.faa","simulate_art_sample1.5","./test")
-    # for batch predict
-    bayes_classifier_batch("./example/example.list","./batch_test","BC_predict.summary")
+#def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary",
+#         hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-3,
+#         blastp_para="-num_threads 3",
+#         hmmer_para="--noali --cpu 3",
+#         mmseqs_para="-s 7 --max-seqs 1 --alignment-mode 3\
+#                     --alignment-output-mode 0 --min-aln-len 40 --cov-mode 0 --greedy-best-hits 1 --threads 3"):
+#
+#    '''
+#    Aim: batch predict lifestyle
+#    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_creteria=1e-5,mmseq_creteria=1e-5)
+#        inputfile: a tab seperate file contain two column.
+#            first column: sample name;
+#            second column: path of the protein file;
+#        wd: work path where put the result
+#        summaryfile: file name for summary of the predict output. location will be under the wd path
+#        hmm_creteria: creteria to filter pfam evalue greater than x (default: 1e-5)
+#        mmseqs_creteria: creteria to filter mmseqs evalue greater than x (default: 1e-5)
+#        blastp_creteria: creteria to filter blastp evalue greater than x (default: 1e-5)
+#    '''
+#
+#    mkdirs(wd)
+#    opt = open(os.path.join(wd, summaryfile), "w")
+#    header = "sample_name\tintegrase_number\texcisionase_number\tpfam_label\tbc_temperate\tbc_virulent\tbc_label\tfinal_label\tmatch_gene_number\tpath\n"
+#    opt.write(header)
+#
+#    with open(inputfile) as f:
+#        for line in f:
+#            sample_name, path = line.strip("\n").split("\t")
+#            res = bayes_classifier_single(
+#                path, sample_name, wd, hmm_creteria, mmseqs_creteria,blastp_creteria,blastp_para,hmmer_para,mmseqs_para)
+#            #prefix, inte_label, excision_label, pfam_label, p_total_temperate, p_total_lytic, bc_label, final_label = res
+#            res.append(path)
+#            opt.write("\t".join([str(i) for i in res])+"\n")
+#            opt.flush()
+#    opt.close()
+#
+#
+#def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary",
+#          hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-3,
+#          blastp_para="-num_threads 3",
+#          hmmer_para="--noali --cpu 3",
+#          mmseqs_para="-s 7 --max-seqs 1 --alignment-mode 3\
+#                      --alignment-output-mode 0 --min-aln-len 40 --cov-mode 0 --greedy-best-hits 1 --threads 3"):
+#
+#    '''
+#    Aim: predict lifestyle for contig file
+#    (WARNING: treat each *seq* as an indepent virus sequence, not suit for a genome contain multiple sequence)
+#
+#    Process: prodigal --> lifestyleBC
+#
+#    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_creteria=1e-5,mmseq_creteria=1e-5)
+#        inputfile: contig file
+#        wd: work path where put the result
+#        summaryfile: file name for summary of the predict output. location will be under the wd path
+#        hmm_creteria: creteria to filter pfam evalue greater than x (default: 1e-5)
+#        mmseqs_creteria: creteria to filter mmseqs evalue greater than x (default: 1e-5)
+#        blastp_creteria: creteria to filter blastp evalue greater than x (default: 1e-5)
+#    '''
+#
+#    mkdirs(wd)
+#    opt = open(os.path.join(wd, summaryfile), "w")
+#    header = "sample_name\tintegrase_number\texcisionase_number\tpfam_label\tbc_temperate\tbc_virulent\tbc_label\tfinal_label\tmatch_gene_number\tpath\n"
+#    opt.write(header)
+#
+#    for seq in SeqIO.parse(inputfile,"fasta"):
+#        tmpfile="./%s.tmp"%seq.id
+#        SeqIO.write(seq,tmpfile,"fasta")
+#        faaFile = runProdigal(tmpfile, seq.id, "%s/BC_prodigal"%wd, program="meta", otherPara="-g 11")
+#        res = ["sample_name"] + ['NA']*6 + [0]
+#        if os.path.getsize(faaFile) != 0:
+#            res = bayes_classifier_single(
+#                path, sample_name, wd, hmm_creteria, mmseqs_creteria,blastp_creteria,blastp_para,hmmer_para,mmseqs_para)
+#                #  faaFile, seq.id, wd, hmm_creteria, mmseqs_creteria)
+#        #prefix, inte_label, excision_label, pfam_label, p_total_temperate, p_total_lytic, bc_label, final_label, match_gene_number = res
+#        res.append(faaFile)
+#        opt.write("\t".join([str(i) for i in res])+"\n")
+#        opt.flush()
+#        os.remove(tmpfile)
+#    opt.close()
+#
+#
+#def bayes_classifier_genomes(inputfile, wd, summaryfile="BC_predict.summary",
+#           hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-3,
+#           blastp_para="-num_threads 3",
+#           hmmer_para="--noali --cpu 3",
+#           mmseqs_para="-s 7 --max-seqs 1 --alignment-mode 3\
+#                       --alignment-output-mode 0 --min-aln-len 40 --cov-mode 0 --greedy-best-hits 1 --threads 3"):
+#    '''
+#    Aim: predict lifestyle for one genome file which contain multiple seq
+#    (WARNING: treat *inputfile* as an indepent virus sequence(no matter how many seq are there), suit for a genome contain multiple sequence)
+#
+#    Process: prodigal --> lifestyleBC
+#
+#    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-5)
+#        inputfile: a tab seperate file contain two column.
+#            first column: sample name;
+#            second column: path of the genome file;
+#        wd: work path where put the result
+#        summaryfile: file name for summary of the predict output. location will be under the wd path
+#        hmm_creteria: creteria to filter pfam evalue greater than x (default: 1e-5)
+#        mmseqs_creteria: creteria to filter mmseqs evalue greater than x (default: 1e-5)
+#        blastp_creteria: creteria to filter blastp evalue greater than x (default: 1e-5)
+#    '''
+#
+#    mkdirs(wd)
+#    opt = open(os.path.join(wd, summaryfile), "w")
+#    header = "sample_name\tintegrase_number\texcisionase_number\tpfam_label\tbc_temperate\tbc_virulent\tbc_label\tfinal_label\tmatch_gene_number\tpath\n"
+#    opt.write(header)
+#
+#    with open(inputfile) as f:
+#        for line in f:
+#            sample_name, path = line.strip("\n").split("\t")
+#            faaFile = runProdigal(path, sample_name, "%s/BC_prodigal"%wd, program="meta", otherPara="-g 11")
+#            res = [sample_name] + ['NA']*6 + [0]
+#            if os.path.getsize(faaFile) != 0:
+#                res = bayes_classifier_single(
+#                     # faaFile, sample_name, wd, pfam_creteria, mmseqs_creteria)
+#                    path, sample_name, wd, hmm_creteria, mmseqs_creteria,blastp_creteria,blastp_para,hmmer_para,mmseqs_para)
+#            #prefix, inte_label, excision_label, pfam_label, p_total_temperate, p_total_lytic, bc_label, final_label, match_gene_number = res
+#            res.append(faaFile)
+#            opt.write("\t".join([str(i) for i in res])+"\n")
+#            opt.flush()
+#    opt.close()
+#
+#
+#if __name__ == "__main__":
+#    # for single predict
+#    #bayes_classifier_single("./example/simulate_art_sample1.21.faa", "simulate_art_sample1.21", "./test")
+#    # bayes_classifier_single("./example/simulate_art_sample1.1.faa","simulate_art_sample1.1","./test")
+#    # bayes_classifier_single("./example/simulate_art_sample1.5.faa","simulate_art_sample1.5","./test")
+#    # for batch predict
+#    bayes_classifier_batch("./example/example.list","./batch_test","BC_predict.summary")
