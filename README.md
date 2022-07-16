@@ -31,7 +31,11 @@ pip3 install https://github.com/pengSherryYel/Replidec_v0.2.1/releases/download/
 Replidec [para]
 ```
 
-Replidec cantain 6 different program:  'multiSeqAsOne','batch','multiSeqEachAsOne','test_multiSeqAsOne','test_batch','test_multiSeqEachAsOne' 
+Replidec cantain 6 different program:
+
+'multiSeqAsOne', 'batch', 'multiSeqEachAsOne',
+
+'test_multiSeqAsOne','test_batch','test_multiSeqEachAsOne' 
 
 * multiSeqAsOne mode: input is a plain text file contain two coloumn (seprator must be **tab**)
 
