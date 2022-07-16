@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from Replidec import bayes_classifier_single, runProdigal
-from utility import mkdirs, checkEnv
+from Replidec.Replidec import bayes_classifier_single, runProdigal
+from Replidec.utility import mkdirs
 import os
 from Bio import Seq,SeqIO
 import time
+from subprocess import Popen
+
+
 
 def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary",threads=10,
          hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-5,
@@ -28,6 +31,7 @@ def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary",threa
 
     mkdirs(wd)
     opt = open(os.path.join(wd, summaryfile), "w")
+
     header = "sample_name\tintegrase_number\texcisionase_number\tpfam_label\tbc_temperate\tbc_virulent\tbc_label\tfinal_label\tmatch_gene_number\tpath\n"
     opt.write(header)
 

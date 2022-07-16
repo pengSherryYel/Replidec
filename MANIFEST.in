@@ -1,4 +1,4 @@
 include LICENSE README.md
 recursive-include Replidec *py
-recursive-include Replidec/db *
-recursive-include test *
+#recursive-include Replidec/db *
+#recursive-include test *

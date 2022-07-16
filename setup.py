@@ -10,13 +10,14 @@ INSTALL_REQUIRES=[
         ]
 
 setup(name='Replidec',
-      version='0.2.1',
+      #version='0.2.1',
+      version='0.2.0',
       description='Replication Cycle Detector for Phages',
       author='Xue Peng',
       author_email='xue.peng@helmholtz-muenchen.de',
       url='https://github.com/pengSherryYel/Replidec_v0.2.1',
       packages=find_packages(where='.',
-                            include=['Replidec']),
+                            include=['Replidec.*']),
       long_description=long_description,
       long_description_content_type="text/markdown",
       install_requires=INSTALL_REQUIRES,

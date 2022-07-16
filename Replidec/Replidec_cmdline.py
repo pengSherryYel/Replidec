@@ -2,8 +2,7 @@
 
 import os
 import sys
-from Replidec_multi import bayes_classifier_batch,bayes_classifier_contig,bayes_classifier_genomes
-#import argparse
+from Replidec.Replidec_multi import bayes_classifier_batch,bayes_classifier_contig,bayes_classifier_genomes
 from argparse import RawTextHelpFormatter,ArgumentParser
 
 

@@ -10,7 +10,7 @@ from collections import defaultdict
 import os
 from subprocess import Popen
 import math
-from utility import mkdirs, checkEnv
+from Replidec.utility import mkdirs, checkEnv
 from Bio import Seq,SeqIO
 from threading import Thread
 
