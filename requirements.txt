@@ -1,0 +1,5 @@
+biopython==1.79
+certifi @ file:///opt/conda/conda-bld/certifi_1655968806487/work/certifi
+future==0.18.2
+numpy==1.23.1
+Replidec @ file:///home/viro/xue.peng/script/bayes_classifier_v2.1/dist/Replidec-0.2.1-py2.py3-none-any.whl
