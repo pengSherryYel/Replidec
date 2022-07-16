@@ -1,0 +1,4 @@
+Replidec/db/mmseq2_linclust_cluster.stat.scoreOpt.tsv filter=lfs diff=lfs merge=lfs -text
+Replidec/db/bayes_mmseqs_index/all.protein filter=lfs diff=lfs merge=lfs -text
+Replidec/db/bayes_mmseqs_index/all.protein_h filter=lfs diff=lfs merge=lfs -text
+Replidec/db/bayes_mmseqs_index/all.protein.lookup filter=lfs diff=lfs merge=lfs -text

@@ -13,7 +13,5 @@ The package consists of the following Python modules:
 
 """
 __version__ = "0.2.1"
+__all__ = ["Replidec", "Replidec_cmdline","Replidec_multi","utility"]
 from Replidec import *
-from Replidec.Replidec import *
-from Replidec.Replidec_multi import *
-from Replidec.utility import *
