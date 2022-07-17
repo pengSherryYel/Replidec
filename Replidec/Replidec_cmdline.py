@@ -32,19 +32,19 @@ parser.add_argument("-w", "--wd",default="Replidec", dest="workdir", help="work 
 
 parser.add_argument("-s", "--summary",default="BC_predict.summary", help="name of summary file")
 
-parser.add_argument("-t", "--threads",default=10, help="number of parallel threads")
+parser.add_argument("-t", "--threads",default=10, type=int, help="number of parallel threads")
 
-parser.add_argument("-c", "--hc",default=1e-5, dest="hmmer_creteria", help="Creteria to filter hmmer result")
+parser.add_argument("-c", "--hc",default=1e-5, type=float, dest="hmmer_creteria", help="Creteria to filter hmmer result")
 
 parser.add_argument("-H", "--hp",default="--noali --cpu 3", dest="hmmer_parameter", help="Parameter used for hmmer")
 
-parser.add_argument("-m", "--mc",default=1e-5, dest="mmseqs_creteria", help="Creteria to filter mmseqs2 result")
+parser.add_argument("-m", "--mc",default=1e-5, type=float, dest="mmseqs_creteria", help="Creteria to filter mmseqs2 result")
 
 parser.add_argument("-M", "--mp", dest="mmseqs_parameter",
                     default="-s 7 --max-seqs 1 --alignment-mode 3 --alignment-output-mode 0 --min-aln-len 40 --cov-mode 0 --greedy-best-hits 1 --threads 3",
                     help="Parameter used for mmseqs")
 
-parser.add_argument("-b", "--bc",default=1e-5, dest="blastp_creteria", help="Creteria to filter blast result")
+parser.add_argument("-b", "--bc",default=1e-5, type=float, dest="blastp_creteria", help="Creteria to filter blast result")
 
 parser.add_argument("-B", "--bp",default="-num_threads 3", dest="blastp_parameter", help="Parameter used for blastp")
 
