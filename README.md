@@ -36,9 +36,9 @@ Replidec [-h] [--version] -p {multiSeqAsOne,batch,multiSeqEachAsOne,test_multiSe
 
 ## Usage: Input(-i) and Propgram(-p)
 
-*Input file is different base on different program*
+**Input file is different base on different program**
 
-Replidec cantain *6* different program:
+Replidec cantain **6** different program:
 
 1. 'multiSeqAsOne'
 2. 'batch'
@@ -50,11 +50,11 @@ Replidec cantain *6* different program:
 ### multiSeqAsOne
 * multiSeqAsOne mode: input is a plain text file contain two coloumn (seprator must be **tab**)
 
-    first column: sample name; this will be used as identfier in the output summary file 
+    * first column: sample name; this will be used as identfier in the output summary file 
     
-    second column: path of the genome or contig file from one virues (Each file can contain multi seq)
+    * second column: path of the **genome or contig** file from one virues (Each file can contain multi seq)
 
-    Example: test/example/genome_test.small.index
+    * Example: test/example/genome_test.small.index
 
     ```
     seq1    example/genome_test/genome.test.fnaaa
@@ -63,20 +63,20 @@ Replidec cantain *6* different program:
     ```
 
 ### multiSeqEachAsOne
-* multiSeqEachAsOne mode: input is a sequence file and treat *each* seqence as from one virus and give each sequence a predict result;
+* multiSeqEachAsOne mode: input is a **sequence** file and treat *each* seqence as from one virus and give each sequence a predict result;
     
-    This mode will treat each sequence independently
+    * This mode will treat each sequence independently
 
-    Example: test/example/test.contig.small.fa
+    * Example: test/example/test.contig.small.fa
 
 ### batch
 * batch mode: input is a plain text file contain two coloumn (seprator must be **tab**);
 
-    first column: sample name;
+    * first column: sample name;
 
-    second column: path of the *protein* file from one virues;
+    * second column: path of the **protein** file from one virues;
 
-    Example: test/example/example.small.list
+    * Example: test/example/example.small.list
 
     ```
     simulate_art_sample1.10 example/simulate_art_sample1.10.faa
@@ -86,7 +86,7 @@ Replidec cantain *6* different program:
 
 ### test_multiSeqAsOne; test_batch; test_multiSeqEachAsOne
 These 3 program is used to test replidec.
-* test_* mode: test for each prpgram
+* test_* mode: test for each program
 
 ## Usage: Output(-w and -s)
 The output dirname can use `-w` to set and the name of summary file can use `-s` to set.
@@ -96,25 +96,25 @@ Under output dir serveral dir and a summary file will be generated
 * BC_pfam: This dir contain the result file for dectect the Integrase and Excisionase
 * BC_prodigal: This dir contain the result file for CDS prediction from genome or contig sequence. (-p batch will not generate this dir)
 * BC_predict.summary: This file is the summary file of the predict result. It contain multiple coloumns.
-    sample_name: identifier. Can be sequence id or first coloumn the plain text input file. 
+    * sample_name: identifier. Can be sequence id or first coloumn the plain text input file. 
 
-    integrase_number: the number of genes mapped to integrase meet the creteria(set by -c).
+    * integrase_number: the number of genes mapped to integrase meet the creteria(set by -c).
 
-    excisionase_number: the number of genes mapped to excisionase meet the creteria(set by -c).
+    * excisionase_number: the number of genes mapped to excisionase meet the creteria(set by -c).
 
-    pfam_label: if contain integrase or excisionase, label will be "Temperate". otherwise "Virulent".
+    * pfam_label: if contain integrase or excisionase, label will be "Temperate". otherwise "Virulent".
 
-    bc_temperate: conditional probability of temperate|genes. 
+    * bc_temperate: conditional probability of temperate|genes. 
 
-    bc_virulent: conditional probability of virulent|genes. 
+    * bc_virulent: conditional probability of virulent|genes. 
 
-    bc_label: if bc_temperate greater than bc_virulent, label will be "Temperate". otherwise "Virulent".
+    * bc_label: if bc_temperate greater than bc_virulent, label will be "Temperate". otherwise "Virulent".
 
-    final_label: if pfam_label and bc_label both is Temperate, then label will be "Temperate"; if Innovirues marker gene exist, then label will be "Chronic"; otherwise "Virulent".
+    * final_label: if pfam_label and bc_label both is Temperate, then label will be "Temperate"; if Innovirues marker gene exist, then label will be "Chronic"; otherwise "Virulent".
 
-    match_gene_number:  the number of genes mapped to our custom databse.
+    * match_gene_number:  the number of genes mapped to our custom databse.
 
-    path: path of input faa file
+    * path: path of input faa file
 
 ## Example
 ```
