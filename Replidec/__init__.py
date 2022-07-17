@@ -13,7 +13,7 @@ The package consists of the following Python modules:
 
 """
 __version__ = "0.2.1"
-#from .Replidec import *
+from Replidec import *
 #from .Replidec_cmdline import *
 #from .Replidec_multi import *
 #from .utility import *
