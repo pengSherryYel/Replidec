@@ -28,7 +28,7 @@ pip3 install https://github.com/pengSherryYel/Replidec_v0.2.1/releases/download/
 
 ## Usage: Overview
 ```
-Replidec [-h] [--version] -p {multiSeqAsOne,batch,multiSeqEachAsOne,test_multiSeqAsOne,test_batch,test_multiSeqEachAsOne}
+Replidec [-h] [--version] -p {multiSeqAsOne,batch,multiSeqEachAsOne}
          [-i INPUT_FILE] [-w WORKDIR] [-s SUMMARY] [-t THREADS] [-c HMMER_CRETERIA] [-H HMMER_PARAMETER] [-m MMSEQS_CRETERIA]
          [-M MMSEQS_PARAMETER] [-b BLASTP_CRETERIA] [-B BLASTP_PARAMETER]
 
@@ -38,14 +38,11 @@ Replidec [-h] [--version] -p {multiSeqAsOne,batch,multiSeqEachAsOne,test_multiSe
 
 **Input file is different base on different program**
 
-Replidec cantain **6** different program:
+Replidec cantain **3** different program:
 
 1. 'multiSeqAsOne'
 2. 'batch'
 3. 'multiSeqEachAsOne',
-4. 'test_multiSeqAsOne'
-5. 'test_batch'
-6. 'test_multiSeqEachAsOne' 
 
 ### multiSeqAsOne
 * multiSeqAsOne mode: input is a plain text file contain two coloumn (seprator must be **tab**)
@@ -84,10 +81,6 @@ Replidec cantain **6** different program:
     simulate_art_sample1.12 example/simulate_art_sample1.12.faa
     ```
 
-### test_multiSeqAsOne; test_batch; test_multiSeqEachAsOne
-These 3 program is used to test replidec.
-* test_* mode: test for each program
-
 ## Usage: Output(-w and -s)
 The output dirname can use `-w` to set and the name of summary file can use `-s` to set.
 Under output dir serveral dir and a summary file will be generated
@@ -118,15 +111,6 @@ Under output dir serveral dir and a summary file will be generated
 
 ## Example
 ```
-## test passed - test_multiSeqAsOne
-Replidec -p test_multiSeqAsOne
-
-## test passsed - test_multiSeqEachAsOne
-Replidec -p test_multiSeqEachAsOne
-
-## test passsed - test_batch
-Replidec -p test_batch
-
 ## test passed - multiSeqAsOne
 Replidec -p multiSeqAsOne -i example/genome_test.small.index -w multiSeqAsOne
 

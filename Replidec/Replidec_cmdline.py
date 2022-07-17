@@ -12,15 +12,14 @@ parser = ArgumentParser(description="replication cycle detector", formatter_clas
 parser.add_argument('--version', action='version', version='Replidec v0.2.1')
 
 parser.add_argument("-p","--program", default='multiSeqEachAsOne', required=True,
-                    choices=['multiSeqAsOne','batch','multiSeqEachAsOne','test_multiSeqAsOne','test_batch','test_multiSeqEachAsOne'],
+                    choices=['multiSeqAsOne','batch','multiSeqEachAsOne'],
                     help="multiSeqAsOne mode: input is a plain text file contain two coloumn (seprator must be **tab**)\n"
                         "   first column: sample name;\n"
                         "   second column: path of the protein file from one virues;\n"
                         "multiSeqEachAsOne mode: input is a sequence file and treat each seqence as from one virus;\n"
                         "batch mode: input is a plain text file contain two coloumn (seprator must be **tab**);\n"
                         "   first column: sample name;\n"
-                        "   second column: path of the protein file from one virues;\n"
-                        "test_* mode: test for each prpgram")
+                        "   second column: path of the protein file from one virues;\n")
 
 parser.add_argument("-i", "--input_file",
                     help="input file. Can be a sequence file or index file\n"
@@ -66,15 +65,15 @@ def main():
         bayes_classifier_batch(args.input_file, args.workdir, summaryfile=args.summary, threads=args.threads,
                               hmm_creteria=args.hmmer_creteria, mmseqs_creteria=args.mmseqs_creteria, blastp_creteria=args.blastp_creteria,
                               hmmer_para=args.hmmer_parameter, mmseqs_para=args.mmseqs_parameter, blastp_para=args.blastp_parameter)
-    elif args.program == "test_multiSeqAsOne":
-        bayes_classifier_genomes("%s/example/genome_test.index"%current_work_dir, "./test_multiSeqAsOne",
-                                summaryfile="BC_predict.summary",threads=10)
-    elif args.program == "test_multiSeqEachAsOne":
-        bayes_classifier_contig("%s/example/test.contig.small.fa"%current_work_dir, "./test_multiSeqEachAsOne",
-                                summaryfile="BC_predict.summary",threads=10)
-    elif args.program == "test_batch":
-        bayes_classifier_batch("%s/example/example.list"%current_work_dir, "./test_batch",
-                                summaryfile="BC_predict.summary")
+    #elif args.program == "test_multiSeqAsOne":
+    #    bayes_classifier_genomes("%s/example/genome_test.index"%current_work_dir, "./test_multiSeqAsOne",
+    #                            summaryfile="BC_predict.summary",threads=10)
+    #elif args.program == "test_multiSeqEachAsOne":
+    #    bayes_classifier_contig("%s/example/test.contig.small.fa"%current_work_dir, "./test_multiSeqEachAsOne",
+    #                            summaryfile="BC_predict.summary",threads=10)
+    #elif args.program == "test_batch":
+    #    bayes_classifier_batch("%s/example/example.list"%current_work_dir, "./test_batch",
+    #                            summaryfile="BC_predict.summary")
     else:
         print("Please check the vaild program (multiSeqAsOne|multiSeqEachAsOne|batch)")
 
