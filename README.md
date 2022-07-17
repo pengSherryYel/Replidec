@@ -16,7 +16,7 @@ mmseqs, hmmsearch, blastp must set to $PATH, these software can equal or higher 
 ```
 conda create -n replidec
 conda activate replidec
-conda install -c bioconda,anaconda "python>=3.8" mmseqs2 hmmer blast
+conda install -c bioconda -c anaconda "python>=3.8" mmseqs2 hmmer blast
 ```
 
 ## Install
