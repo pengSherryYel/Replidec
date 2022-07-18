@@ -1,0 +1,25 @@
+========
+Replidec
+========
+
+
+.. image:: https://img.shields.io/pypi/v/Replidec.svg
+        :target: https://pypi.python.org/pypi/Replidec
+
+.. image:: https://readthedocs.org/projects/Replidec/badge/?version=latest
+        :target: https://Replidec.readthedocs.io/en/latest/?version=latest
+        :alt: Documentation Status
+
+
+Phage replication cycle/lifecycle prediction
+
+
+* Free software: MIT license
+* Documentation: https://Replidec.readthedocs.io.
+
+
+Features
+--------
+
+* TODO
+

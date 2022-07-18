@@ -1,0 +1,41 @@
+{% set name = "Replidec" %}
+{% set version = "0.2.1.3" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  path: "../"
+
+build:
+  number: 0
+  entry_points:
+    - Replidec=Replidec.cli:main
+  script: "pip install . -vv"
+
+requirements:
+  host:
+    - python=3.10
+    - biopython=1.79
+    - click
+    - numpy=1.23.1
+    - pip
+  run:
+    - python=3.10
+    - biopython=1.79
+    - click
+    - numpy=1.23.1
+    - mmseqs2
+    - blast
+    - hmmer
+
+
+about:
+  home: "https://github.com/deng-lab/Replidec"
+  license: MIT
+  license_family: MIT
+  license_file: 
+  summary: "Replidec"
+  doc_url: 
+  dev_url: 

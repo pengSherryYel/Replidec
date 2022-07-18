@@ -1,37 +1,60 @@
 # Replidec: Replication Cycle Detector for Phages
+
+[![Releases](https://github.com/deng-lab/Replidec/actions/workflows/create_release.yml/badge.svg)](https://github.com/deng-lab/Replidec/actions/workflows/create_release.yml)
+[![Anaconda](https://github.com/deng-lab/Replidec/actions/workflows/build_for_anaconda.yml/badge.svg)](https://github.com/deng-lab/Replidec/actions/workflows/build_for_anaconda.yml)
+[![Docker](https://github.com/deng-lab/Replidec/actions/workflows/upload_to_docker.yml/badge.svg)](https://github.com/deng-lab/Replidec/actions/workflows/upload_to_docker.yml)
+[![PyPI](https://img.shields.io/pypi/v/Replidec.svg)](https://pypi.python.org/pypi/Replidec)
+[![Anaconda-Server Badge](https://anaconda.org/denglab/replidec/badges/version.svg)](https://anaconda.org/denglab/replidec)
+[![Anaconda-Server Badge](https://anaconda.org/denglab/replidec/badges/license.svg)](https://anaconda.org/denglab/replidec)
+[![Anaconda-Server Badge](https://anaconda.org/denglab/replidec/badges/downloads.svg)](https://anaconda.org/denglab/replidec)
+[![DOI](https://zenodo.org/badge/515123862.svg)](https://zenodo.org/badge/latestdoi/515123862)
+
 ## Aim
 
 Use bayes classifier combine with homology search to predict virus replication cycle
 
-### Important: 
+## Install
 
-mmseqs, hmmsearch, blastp must set to $PATH, these software can equal or higher than version list below
+### Method 1: using Docker (recommended)
 
-    MMseqs2 Version: 13.45111
-
-    HMMER 3.3.2 (Nov 2020)
-
-    Protein-Protein BLAST 2.5.0+
-
+```bash
+docker pull denglab/replidec
 ```
+
+If you want to use `Replidec` on an HPC, singularity is recommended. You can create a singularity image using following command,
+
+```bash
+singularity pull replidec.sif docker://denglab/replidec
+```
+
+### Method 2: using Conda
+
+```bash
 conda create -n replidec
 conda activate replidec
-conda install -c bioconda -c anaconda "python>=3.8" mmseqs2 hmmer blast
+conda install -c denglab -c conda-forge replidec
 ```
 
-## Install
-```
+### Method 3: using pip
+
+If you install using pip, please make sure that `mmseqs`, `hmmsearch` and `blastp` is set to $PATH, these software can equal or higher than version list below
+
+- MMseqs2 Version: 13.45111
+
+- HMMER 3.3.2 (Nov 2020)
+
+- Protein-Protein BLAST 2.5.0+
+
+```bash
 pip3 install Replidec
-or
-pip3 install https://github.com/pengSherryYel/Replidec_v0.2.1/releases/download/v0.2.1/Replidec-0.2.1-py2.py3-none-any.whl
 ```
 
 ## Usage: Overview
+
 ```
 Replidec [-h] [--version] -p {multiSeqAsOne,batch,multiSeqEachAsOne}
          [-i INPUT_FILE] [-w WORKDIR] [-s SUMMARY] [-t THREADS] [-c HMMER_CRETERIA] [-H HMMER_PARAMETER] [-m MMSEQS_CRETERIA]
          [-M MMSEQS_PARAMETER] [-b BLASTP_CRETERIA] [-B BLASTP_PARAMETER]
-
 ```
 
 ## Usage: Input(-i) and Propgram(-p)
