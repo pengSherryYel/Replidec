@@ -4,7 +4,6 @@
 [![Anaconda-Server Badge](https://anaconda.org/denglab/replidec/badges/version.svg)](https://anaconda.org/denglab/replidec)
 [![Anaconda-Server Badge](https://anaconda.org/denglab/replidec/badges/license.svg)](https://anaconda.org/denglab/replidec)
 [![Anaconda-Server Badge](https://anaconda.org/denglab/replidec/badges/downloads.svg)](https://anaconda.org/denglab/replidec)
-[![DOI](https://zenodo.org/badge/515123862.svg)](https://zenodo.org/badge/latestdoi/515123862)
 
 ## Aim
 
