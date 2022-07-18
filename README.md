@@ -1,8 +1,5 @@
 # Replidec: Replication Cycle Detector for Phages
 
-[![Releases](https://github.com/deng-lab/Replidec/actions/workflows/create_release.yml/badge.svg)](https://github.com/deng-lab/Replidec/actions/workflows/create_release.yml)
-[![Anaconda](https://github.com/deng-lab/Replidec/actions/workflows/build_for_anaconda.yml/badge.svg)](https://github.com/deng-lab/Replidec/actions/workflows/build_for_anaconda.yml)
-[![Docker](https://github.com/deng-lab/Replidec/actions/workflows/upload_to_docker.yml/badge.svg)](https://github.com/deng-lab/Replidec/actions/workflows/upload_to_docker.yml)
 [![PyPI](https://img.shields.io/pypi/v/Replidec.svg)](https://pypi.python.org/pypi/Replidec)
 [![Anaconda-Server Badge](https://anaconda.org/denglab/replidec/badges/version.svg)](https://anaconda.org/denglab/replidec)
 [![Anaconda-Server Badge](https://anaconda.org/denglab/replidec/badges/license.svg)](https://anaconda.org/denglab/replidec)
