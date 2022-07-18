@@ -12,6 +12,8 @@ Use bayes classifier combine with homology search to predict virus replication c
 
 ## Install
 
+Download database from https://zenodo.org/record/6857082/files/db.tar.gz
+
 ### Method 1: using Docker (recommended)
 
 ```bash
