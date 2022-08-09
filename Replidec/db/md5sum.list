@@ -1,0 +1,17 @@
+c8280e20dc48854490b4e7f2dc7f8ca1  bayes_mmseqs_index/all.protein
+f1d3ff8443297732862df21dc4e57262  bayes_mmseqs_index/all.protein.dbtype
+158b3911f6bfde5fcfa8bde97179e229  bayes_mmseqs_index/all.protein_h
+740bab4f9ec8808aedb68d6b1281aeb2  bayes_mmseqs_index/all.protein_h.dbtype
+8203707cecd563e4609057198659f3fe  bayes_mmseqs_index/all.protein_h.index
+9e9b853b38cdd4d3f7425cacdcf7aea0  bayes_mmseqs_index/all.protein.index
+eefc89db0d0b32fd0c93227e9fb6e299  bayes_mmseqs_index/all.protein.lookup
+e25d98f19e63b956819803c8deed494d  bayes_mmseqs_index/all.protein.source
+a580450228016f74d8a2bbf923d107f2  excisionase_pfv34.hmm
+a1f38519f3a52b1a4117a2ca66c0811f  Final_marker_morph.hmm
+db5665f10076bd94e2715f748e02939c  integrase_pfv34.hmm
+91867d794a99ab5be6e9e6ea151480fd  Marker_ALV1.faa
+afda9b07e790ac9d91a405d7ccc87fa9  Marker_ALV1.phr
+e955d260288b0c4f9a8903f79f603386  Marker_ALV1.pin
+1d95712758e59aa2024e4fe1b745b94d  Marker_ALV1.psq
+bcaae58dfd0d8713178a0c3889d703ac  mmseq2_linclust_cluster.stat.scoreOpt.tsv
+bcaae58dfd0d8713178a0c3889d703ac  score.tsv
