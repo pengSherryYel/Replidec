@@ -5,10 +5,10 @@
 # date: 2021.12.6
 
 
-import re
+import re,sys
 from collections import defaultdict
 import os
-from subprocess import Popen
+from subprocess import Popen,PIPE
 import math
 from Replidec.utility import mkdirs, checkEnv
 from Bio import Seq,SeqIO
@@ -289,6 +289,37 @@ def chunk_list(inputlist, chunksize=10):
 #                   'PF13333', 'PF13495', 'PF13683', 'PF13976', 'PF14659', 'PF14882', 'PF16795',
 #                   'PF17921', 'PF18103', 'PF18644', 'PF18697', 'PF06806', 'PF07825', 'PF09035']
 
+def check_db_md5(db_dir):
+    cmd = "cd %s/db && md5sum --check md5sum.list && cd -"%(db_dir)
+    obj = Popen(cmd,shell=True, stdout=PIPE)
+    obj.wait()
+    print([i.decode("utf-8") for i in obj.stdout.readlines()])
+    if "FAILED" in ";".join([i.decode("utf-8") for i in obj.stdout.readlines()]):
+        print("Please recheck the databse, database file have wrong information.")
+        sys.exit()
+    else:
+        print("db download done!")
+
+def checkdb_and_download(scriptPos, redownload=False):
+    if redownload:
+        mkdirs("discarded_db")
+        if os.path.exists("%s/db"%scriptPos):
+            cmd = "mv %s/db discarded_db"%scriptPos
+            obj = Popen(cmd,shell=True)
+            obj.wait()
+
+    if not os.path.exists(os.path.join(scriptPos,"db")):
+        print("db not exist! download database ...")
+        url="https://zenodo.org/record/6975142/files/db_v0.2.3.tar.gz"
+        file=os.path.split(url)[-1]
+        cmd = "wget {0} -P {1} && cd {1} && tar -zxvf {2} && rm -rf {2}".format(url, scriptPos, file)
+        obj = Popen(cmd,shell=True, stdout=PIPE)
+        obj.wait()
+
+        check_db_md5(scriptPos)
+    else:
+        print("db exist!")
+
 
 def bayes_classifier_single(inputfile, prefix, wd,
         hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-3,
@@ -319,6 +350,7 @@ def bayes_classifier_single(inputfile, prefix, wd,
     #pfam_label, bc_label, final_label = "Lytic", "Lytic", "Lytic"
     pfam_label, bc_label, final_label = "Virulent", "Virulent", "Virulent"
     fileDir = os.path.dirname(os.path.abspath(__file__))
+
 
     # phase 1 hmmsearch for pfam
     integrase_hmm = os.path.join(fileDir, "db/integrase_pfv34.hmm")
@@ -514,10 +546,12 @@ def bayes_classifier_single(inputfile, prefix, wd,
 #    opt.close()
 #
 #
-#if __name__ == "__main__":
+if __name__ == "__main__":
 #    # for single predict
 #    #bayes_classifier_single("./example/simulate_art_sample1.21.faa", "simulate_art_sample1.21", "./test")
 #    # bayes_classifier_single("./example/simulate_art_sample1.1.faa","simulate_art_sample1.1","./test")
 #    # bayes_classifier_single("./example/simulate_art_sample1.5.faa","simulate_art_sample1.5","./test")
 #    # for batch predict
 #    bayes_classifier_batch("./example/example.list","./batch_test","BC_predict.summary")
+    scriptPos = os.path.dirname(os.path.abspath(__file__))
+    checkdb_and_download(scriptPos)

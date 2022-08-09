@@ -4,7 +4,8 @@ import os
 import sys
 from Replidec.Replidec_multi import bayes_classifier_batch,bayes_classifier_contig,bayes_classifier_genomes
 from argparse import RawTextHelpFormatter,ArgumentParser
-
+from Replidec.Replidec import checkdb_and_download
+from Replidec.utility import mkdirs
 
 current_work_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -48,10 +49,17 @@ parser.add_argument("-b", "--bc",default=1e-5, type=float, dest="blastp_creteria
 
 parser.add_argument("-B", "--bp",default="-num_threads 3", dest="blastp_parameter", help="Parameter used for blastp")
 
+parser.add_argument("-d", "--db",action='store_true',default=False,dest="db_redownload", help="remove db and redownload")
+
 args = parser.parse_args()
 
 
 def main():
+    if args.db_redownload:
+        print("Check db")
+        fileDir = os.path.dirname(os.path.abspath(__file__))
+        checkdb_and_download(fileDir,redownload=True)
+
     print("Using %s"%args.program)
     if args.program == "multiSeqAsOne":
         bayes_classifier_genomes(args.input_file, args.workdir, summaryfile=args.summary, threads=args.threads,

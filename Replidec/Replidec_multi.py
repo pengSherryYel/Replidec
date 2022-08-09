@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from Replidec.Replidec import bayes_classifier_single, runProdigal
+from Replidec.Replidec import bayes_classifier_single, runProdigal, checkdb_and_download
 from Replidec.utility import mkdirs
 import os
 from Bio import Seq,SeqIO
@@ -18,7 +18,7 @@ def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary",threa
 
     '''
     Aim: batch predict lifestyle
-    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_creteria=1e-5,mmseq_creteria=1e-5)
+    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_creteria=1e-5,mmseq_creteria=1e-5, blastp_creteria=1e-5)
         inputfile: a tab seperate file contain two column.
             first column: sample name;
             second column: path of the protein file;
@@ -28,6 +28,9 @@ def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary",threa
         mmseqs_creteria: creteria to filter mmseqs evalue greater than x (default: 1e-5)
         blastp_creteria: creteria to filter blastp evalue greater than x (default: 1e-5)
     '''
+    print("Check db")
+    fileDir = os.path.dirname(os.path.abspath(__file__))
+    checkdb_and_download(fileDir)
 
     mkdirs(wd)
     opt = open(os.path.join(wd, summaryfile), "w")
@@ -72,7 +75,7 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary",thre
 
     Process: prodigal --> lifestyleBC
 
-    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_creteria=1e-5,mmseq_creteria=1e-5)
+    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_creteria=1e-5,mmseq_creteria=1e-5, blastp_creteria=1e-5)
         inputfile: contig file
         wd: work path where put the result
         summaryfile: file name for summary of the predict output. location will be under the wd path
@@ -80,6 +83,9 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary",thre
         mmseqs_creteria: creteria to filter mmseqs evalue greater than x (default: 1e-5)
         blastp_creteria: creteria to filter blastp evalue greater than x (default: 1e-5)
     '''
+    print("Check db")
+    fileDir = os.path.dirname(os.path.abspath(__file__))
+    checkdb_and_download(fileDir)
 
     mkdirs(wd)
     opt = open(os.path.join(wd, summaryfile), "w")
@@ -142,6 +148,9 @@ def bayes_classifier_genomes(inputfile, wd, summaryfile="BC_predict.summary",thr
         mmseqs_creteria: creteria to filter mmseqs evalue greater than x (default: 1e-5)
         blastp_creteria: creteria to filter blastp evalue greater than x (default: 1e-5)
     '''
+    print("Check db")
+    fileDir = os.path.dirname(os.path.abspath(__file__))
+    checkdb_and_download(fileDir)
 
     mkdirs(wd)
     opt = open(os.path.join(wd, summaryfile), "w")

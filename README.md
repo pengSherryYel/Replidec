@@ -52,8 +52,15 @@ pip3 install Replidec
 ```
 Replidec [-h] [--version] -p {multiSeqAsOne,batch,multiSeqEachAsOne}
          [-i INPUT_FILE] [-w WORKDIR] [-s SUMMARY] [-t THREADS] [-c HMMER_CRETERIA] [-H HMMER_PARAMETER] [-m MMSEQS_CRETERIA]
-         [-M MMSEQS_PARAMETER] [-b BLASTP_CRETERIA] [-B BLASTP_PARAMETER]
+         [-M MMSEQS_PARAMETER] [-b BLASTP_CRETERIA] [-B BLASTP_PARAMETER] [-d]
 ```
+## Usage: database
+
+Database used in Replidec will be download automatically. 
+
+Location: will be download at the where Replidec installed
+
+If you want to redownload the database, `-d` parameter can be used. The older database will be mv to "discarded_db" in the workdir(-w); This dir can be removed manually by user.
 
 ## Usage: Input(-i) and Propgram(-p)
 

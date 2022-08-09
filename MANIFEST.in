@@ -1,10 +1,13 @@
-include CONTRIBUTING.rst
-include HISTORY.rst
+#include CONTRIBUTING.rst
+#include HISTORY.rst
 include LICENSE
 include README.rst
 
-recursive-include tests *
-recursive-exclude * __pycache__
-recursive-exclude * *.py[co]
+graft test
+#prune Replidec/__pycache__
+recursive-exclude Replidec *.py[co]
+prune Replidec/db
 
-recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif
+
+
+#recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif
