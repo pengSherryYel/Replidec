@@ -266,7 +266,7 @@ def calcaulate_score(mmseqOpt, scoreD, creteria=1e-5):
             p_total_lytic += float(l)
 
     if p_total_temperate > p_total_lytic:
-        label = "Temperaate"
+        label = "Temperate"
     elif p_total_temperate < p_total_lytic:
         label = "Virulent"
     else:
