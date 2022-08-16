@@ -11,9 +11,15 @@ Use bayes classifier combine with homology search to predict virus replication c
 
 ## Install
 
-Download database from https://zenodo.org/record/6857082/files/db.tar.gz
+### Method 1: using Conda
 
-### Method 1: using Docker (recommended)
+```bash
+conda create -n replidec
+conda activate replidec
+conda install -c denglab -c conda-forge -c bioconda replidec
+```
+
+### Method 2: using Docker
 
 ```bash
 docker pull denglab/replidec
@@ -23,14 +29,6 @@ If you want to use `Replidec` on an HPC, singularity is recommended. You can cre
 
 ```bash
 singularity pull replidec.sif docker://denglab/replidec
-```
-
-### Method 2: using Conda
-
-```bash
-conda create -n replidec
-conda activate replidec
-conda install -c denglab -c conda-forge replidec
 ```
 
 ### Method 3: using pip
