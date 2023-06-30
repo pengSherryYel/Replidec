@@ -1,4 +1,4 @@
-# Replidec: Replication Cycle Detector for Phages
+# Replidec: Replication Cycle Decipher for Phages
 
 [![PyPI](https://img.shields.io/pypi/v/Replidec.svg)](https://pypi.python.org/pypi/Replidec)
 [![Anaconda-Server Badge](https://anaconda.org/denglab/replidec/badges/version.svg)](https://anaconda.org/denglab/replidec)
@@ -50,15 +50,22 @@ pip3 install Replidec
 ```
 Replidec [-h] [--version] -p {multiSeqAsOne,batch,multiSeqEachAsOne}
          [-i INPUT_FILE] [-w WORKDIR] [-s SUMMARY] [-t THREADS] [-c HMMER_CRETERIA] [-H HMMER_PARAMETER] [-m MMSEQS_CRETERIA]
-         [-M MMSEQS_PARAMETER] [-b BLASTP_CRETERIA] [-B BLASTP_PARAMETER] [-d]
+         [-M MMSEQS_PARAMETER] [-b BLASTP_CRETERIA] [-B BLASTP_PARAMETER] [-d] [-D]
 ```
-## Usage: database
+## Usage: database (-d & -D)
 
 Database used in Replidec will be download automatically. 
 
 Location: will be download at the where Replidec installed
 
 If you want to redownload the database, `-d` parameter can be used. The older database will be mv to "discarded_db" in the workdir(-w); This dir can be removed manually by user.
+
+We provide 2 database for user choose. Use -D to choose database. all|prokaryote
+
+1. all: This database contain all proteins from the prokaryotic, eukaryotic
+virus and prophage.
+2. prokaryote: This database contain proteins from the prokaryotic virus and
+prophage. eukaryotic virus gene was removed from this database
 
 ## Usage: Input(-i) and Propgram(-p)
 

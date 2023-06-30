@@ -310,7 +310,8 @@ def checkdb_and_download(scriptPos, redownload=False):
 
     if not os.path.exists(os.path.join(scriptPos,"db")):
         print("db not exist! download database ...")
-        url="https://zenodo.org/record/6975142/files/db_v0.2.3.tar.gz"
+        #url="https://zenodo.org/record/6975142/files/db_v0.2.3.tar.gz"
+        url="https://zenodo.org/record/8101942/files/db_v0.3.1.tar.gz"
         file=os.path.split(url)[-1]
         cmd = "wget {0} -P {1} && cd {1} && tar -zxvf {2} && rm -rf {2}".format(url, scriptPos, file)
         obj = Popen(cmd,shell=True, stdout=PIPE)
@@ -322,6 +323,7 @@ def checkdb_and_download(scriptPos, redownload=False):
 
 
 def bayes_classifier_single(inputfile, prefix, wd,
+        db_name="prokaryte",
         hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-3,
         blastp_para="-num_threads 3",
         hmmer_para="--noali --cpu 3",
@@ -382,7 +384,15 @@ def bayes_classifier_single(inputfile, prefix, wd,
 
     # phase 2 bayes classifier
     # run mmseqs search
-    bc_mmseqsDB = os.path.join(fileDir, "db/bayes_mmseqs_index/all.protein")
+    if db_name == "all":
+        print("Using prokaryote and eukaryote protein as DB")
+        bc_mmseqsDB = os.path.join(fileDir, "db/bayes_mmseqs_index/all.protein")
+    elif db_name == "prokaryote":
+        print("Using only prokaryote protein as DB")
+        bc_mmseqsDB = os.path.join(fileDir, "db/bayes_mmseqs_index/prokaryote_only")
+    else:
+        print("Please check parameter -D")
+
     mmseqs_wd = os.path.join(wd, "BC_mmseqs")
     mmseqs_prefix = "%s.BC_mmseqs" % prefix
     mmseq_opt = runMmseqsEasysearch(inputfile, mmseqs_prefix, mmseqs_wd, bc_mmseqsDB,
@@ -390,7 +400,13 @@ def bayes_classifier_single(inputfile, prefix, wd,
     # print(mmseq_opt)
 
     # load score file
-    score_file = os.path.join(fileDir, "db/score.tsv")
+    if db_name == "all":
+        score_file = os.path.join(fileDir, "db/all_mmseq2_linclust_cluster.stat.scoreOpt.tsv")
+    elif db_name == "prokaryote":
+        score_file = os.path.join(fileDir, "db/prokaryote_only_mmseq2_linclust_cluster.stat.scoreOpt.tsv")
+    else:
+        print("Please check parameter -D")
+
     member2scoreD = load_scoreD(score_file)
 
     # read mmseqs easy search file

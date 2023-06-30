@@ -51,6 +51,9 @@ parser.add_argument("-B", "--bp",default="-num_threads 3", dest="blastp_paramete
 
 parser.add_argument("-d", "--db",action='store_true',default=False,dest="db_redownload", help="remove db and redownload")
 
+parser.add_argument("-D", "--databaseN",default="prokaryote",choices=["all","prokaryote"],dest="db_name", 
+                    help="specific which database will use. all contain protein from prokaryote and eukaryote; prokaryote contain protein only from prokaryote")
+
 args = parser.parse_args()
 
 
@@ -62,15 +65,18 @@ def main():
 
     print("Using %s"%args.program)
     if args.program == "multiSeqAsOne":
-        bayes_classifier_genomes(args.input_file, args.workdir, summaryfile=args.summary, threads=args.threads,
+        bayes_classifier_genomes(args.input_file, args.workdir,db_name=args.db_name, 
+                                summaryfile=args.summary, threads=args.threads,
                                 hmm_creteria=args.hmmer_creteria, mmseqs_creteria=args.mmseqs_creteria, blastp_creteria=args.blastp_creteria,
                                 hmmer_para=args.hmmer_parameter, mmseqs_para=args.mmseqs_parameter, blastp_para=args.blastp_parameter)
     elif args.program == "multiSeqEachAsOne":
-        bayes_classifier_contig(args.input_file, args.workdir, summaryfile=args.summary, threads=args.threads,
+        bayes_classifier_contig(args.input_file, args.workdir,db_name=args.db_name, 
+                               summaryfile=args.summary, threads=args.threads,
                                hmm_creteria=args.hmmer_creteria, mmseqs_creteria=args.mmseqs_creteria, blastp_creteria=args.blastp_creteria,
                                hmmer_para=args.hmmer_parameter, mmseqs_para=args.mmseqs_parameter, blastp_para=args.blastp_parameter)
     elif args.program == "batch":
-        bayes_classifier_batch(args.input_file, args.workdir, summaryfile=args.summary, threads=args.threads,
+        bayes_classifier_batch(args.input_file, args.workdir,db_name=args.db_name, 
+                               summaryfile=args.summary, threads=args.threads,
                               hmm_creteria=args.hmmer_creteria, mmseqs_creteria=args.mmseqs_creteria, blastp_creteria=args.blastp_creteria,
                               hmmer_para=args.hmmer_parameter, mmseqs_para=args.mmseqs_parameter, blastp_para=args.blastp_parameter)
     #elif args.program == "test_multiSeqAsOne":

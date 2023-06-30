@@ -9,7 +9,7 @@ from subprocess import Popen
 
 
 
-def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary",threads=10,
+def bayes_classifier_batch(inputfile, wd, db_name="prokaryte", summaryfile="BC_predict.summary",threads=10,
          hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-5,
          blastp_para="-num_threads 3",
          hmmer_para="--noali --cpu 3",
@@ -41,7 +41,8 @@ def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary",threa
     executor = ThreadPoolExecutor(max_workers=threads)
     all_task = []
     kwargsD={"hmm_creteria":hmm_creteria, "mmseqs_creteria":mmseqs_creteria, "blastp_creteria":blastp_creteria,
-             "blastp_para":blastp_para,"hmmer_para":hmmer_para,"mmseqs_para":mmseqs_para}
+             "blastp_para":blastp_para,"hmmer_para":hmmer_para,"mmseqs_para":mmseqs_para,
+             "db_name":db_name}
 
     ## n is try to control the sceond job will be submit after the first, cause some env or dir will be confilct when run all jobs at same time
     n=0
@@ -62,7 +63,7 @@ def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary",threa
             #opt.flush()
     opt.close()
 
-def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary",threads=10,
+def bayes_classifier_contig(inputfile, wd, db_name="prokaryte",summaryfile="BC_predict.summary",threads=10,
           hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-5,
           blastp_para="-num_threads 3",
           hmmer_para="--noali --cpu 3",
@@ -95,7 +96,9 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary",thre
     executor = ThreadPoolExecutor(max_workers=threads)
     all_task = []
     kwargsD={"hmm_creteria":hmm_creteria, "mmseqs_creteria":mmseqs_creteria, "blastp_creteria":blastp_creteria,
-              "blastp_para":blastp_para,"hmmer_para":hmmer_para,"mmseqs_para":mmseqs_para}
+              "blastp_para":blastp_para,"hmmer_para":hmmer_para,"mmseqs_para":mmseqs_para,
+              "db_name":db_name}
+
     faaDict = {}
     for seq in SeqIO.parse(inputfile,"fasta"):
         tmpfile="./%s.tmp"%seq.id
@@ -126,7 +129,7 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary",thre
     opt.close()
 
 
-def bayes_classifier_genomes(inputfile, wd, summaryfile="BC_predict.summary",threads=10,
+def bayes_classifier_genomes(inputfile, wd, db_name="prokaryte",summaryfile="BC_predict.summary",threads=10,
            hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-5,
            blastp_para="-num_threads 3",
            hmmer_para="--noali --cpu 3",
@@ -160,7 +163,8 @@ def bayes_classifier_genomes(inputfile, wd, summaryfile="BC_predict.summary",thr
     executor = ThreadPoolExecutor(max_workers=threads)
     all_task = []
     kwargsD={"hmm_creteria":hmm_creteria, "mmseqs_creteria":mmseqs_creteria, "blastp_creteria":blastp_creteria,
-              "blastp_para":blastp_para,"hmmer_para":hmmer_para,"mmseqs_para":mmseqs_para}
+              "blastp_para":blastp_para,"hmmer_para":hmmer_para,"mmseqs_para":mmseqs_para,
+              "db_name":db_name}
     faaDict = {}
 
     with open(inputfile) as f:
