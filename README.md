@@ -16,6 +16,8 @@ Use bayes classifier combine with homology search to predict virus replication c
 ```bash
 conda create -n replidec
 conda activate replidec
+conda install -c conda-forge -c bioconda replidec
+or
 conda install -c denglab -c conda-forge -c bioconda replidec
 ```
 
