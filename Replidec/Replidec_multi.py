@@ -101,11 +101,13 @@ def bayes_classifier_contig(inputfile, wd, db_name="prokaryte",summaryfile="BC_p
 
     faaDict = {}
     for seq in SeqIO.parse(inputfile,"fasta"):
-        tmpfile="./%s.tmp"%seq.id
+        tmpdir = "%s/tmp"%wd
+        mkdirs(tmpdir)
+        seq.id=seq.id.replace("|","_")
+        tmpfile="%s/%s.tmp"%(tmpdir,seq.id)
         SeqIO.write(seq,tmpfile,"fasta")
         faaFile = runProdigal(tmpfile, seq.id, "%s/BC_prodigal"%wd, program="meta", otherPara="-g 11")
         faaDict[seq.id] = faaFile
-        #res = ["sample_name"] + ['NA']*6 + [0]
     #print(faaDict)
 
     n = 0
@@ -121,11 +123,11 @@ def bayes_classifier_contig(inputfile, wd, db_name="prokaryte",summaryfile="BC_p
     for future in as_completed(all_task):
         res = future.result()
         faaFile = faaDict[res[0]]
-        tmpfile="./%s.tmp"%res[0]
+        tmpfile_com="%s/%s.tmp"%(tmpdir,res[0])
         res.append(faaFile)
         opt.write("\t".join([str(i) for i in res])+"\n")
         #opt.flush()
-        os.remove(tmpfile)
+        os.remove(tmpfile_com)
     opt.close()
 
 
