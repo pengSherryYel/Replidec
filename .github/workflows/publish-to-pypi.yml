@@ -1,0 +1,23 @@
+name: Publish Replidec to PyPI
+
+on:
+  release:
+    types: [published]  # 当创建 GitHub Release 时触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # 关键！启用 OIDC 认证
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install build tools
+        run: python -m pip install build
+      - name: Build package
+        run: python -m build
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
