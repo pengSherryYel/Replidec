@@ -11,7 +11,7 @@ requirements = ["biopython>=1.77",
 
 setup(
     name='Replidec',
-    version='0.3.2',
+    version='0.3.3',
     author="Xue Peng",
     author_email='xue.peng@helmholtz-muenchen.de',
     keywords='Replidec',
