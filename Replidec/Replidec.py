@@ -158,7 +158,7 @@ def load_hmmsearch_opt(hmmsearch_opt, creteria=1e-5):
     with open(hmmsearch_opt) as f:
         for line in f:
             if not line.startswith("#"):
-                t = re.split("\s+", line.strip("\n"))
+                t = re.split(r"\s+", line.strip("\n"))
                 target_name, target_accession, query_name, accession, Evalue, score, bias, bst_Evalue, bst_score, bst_bias,\
                     exp, reg, clu, ov, env, dom, rep, inc, *description_of_target = t
                 accession = accession.split(".")[0]
