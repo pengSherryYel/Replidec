@@ -2,3 +2,6 @@ build/
 Replidec.egg-info/
 dist/
 sectest/
+.idea
+Replidec/db/
+Replidec/__pycache__/
