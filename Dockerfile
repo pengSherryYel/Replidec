@@ -13,7 +13,7 @@ ARG MAMBA_DOCKERFILE_ACTIVATE=1
 ENV PATH=/opt/conda/bin:$PATH
 
 RUN cd /opt/conda/lib/python3.10/site-packages/Replidec && \
-    wget https://zenodo.org/record/6975142/files/db_v0.2.3.tar.gz && \
-    tar xzf db_v0.2.3.tar.gz && \
-    rm db_v0.2.3.tar.gz
+    wget https://zenodo.org/record/8101942/files/db_v0.3.1.tar.gz && \
+    tar xzf db_v0.3.1.tar.gz && \
+    rm db_v0.3.1.tar.gz
 

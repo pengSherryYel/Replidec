@@ -10,7 +10,7 @@ from Replidec.utility import mkdirs
 current_work_dir = os.path.dirname(os.path.realpath(__file__))
 
 parser = ArgumentParser(description="replication cycle detector", formatter_class=RawTextHelpFormatter)
-parser.add_argument('--version', action='version', version='Replidec v0.3.3')
+parser.add_argument('--version', action='version', version='Replidec v0.3.4')
 
 parser.add_argument("-p","--program", default='multiSeqEachAsOne', required=True,
                     choices=['multiSeqAsOne','batch','multiSeqEachAsOne'],
