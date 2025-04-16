@@ -1,9 +1,8 @@
 # Replidec: Replication Cycle Decipher for Phages
 
 [![PyPI](https://img.shields.io/pypi/v/Replidec.svg)](https://pypi.python.org/pypi/Replidec)
-[![Anaconda-Server Badge](https://anaconda.org/denglab/replidec/badges/version.svg)](https://anaconda.org/denglab/replidec)
-[![Anaconda-Server Badge](https://anaconda.org/denglab/replidec/badges/license.svg)](https://anaconda.org/denglab/replidec)
-[![Anaconda-Server Badge](https://anaconda.org/denglab/replidec/badges/downloads.svg)](https://anaconda.org/denglab/replidec)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/replidec/badges/version.svg)](https://anaconda.org/bioconda/replidec)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/replidec/badges/downloads.svg)](https://anaconda.org/bioconda/replidec)
 
 ## Aim
 
@@ -11,7 +10,7 @@ Use bayes classifier combine with homology search to predict virus replication c
 
 ## Install
 
-### Method 1: using Conda
+### Method 1: using Conda (Recommend using bioconda with latest version)
 
 ```bash
 conda create -n replidec
@@ -24,13 +23,10 @@ conda install -c denglab -c conda-forge -c bioconda replidec
 ### Method 2: using Docker
 
 ```bash
-docker pull denglab/replidec
-```
-
-If you want to use `Replidec` on an HPC, singularity is recommended. You can create a singularity image using following command,
-
-```bash
-singularity pull replidec.sif docker://denglab/replidec
+docker pull quay.io/biocontainers/replidec:0.3.4--pyhdfd78af_0 
+docker run quay.io/biocontainers/replidec:0.3.4--pyhdfd78af_0 Replidec -h
+## Example
+docker run -v /your/host/data:/data/ quay.io/biocontainers/replidec:0.3.4--pyhdfd78af_0 Replidec -i data/your_inputfile -p multiSeqEachAsOne -w data
 ```
 
 ### Method 3: using pip
