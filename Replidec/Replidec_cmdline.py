@@ -14,7 +14,7 @@ from Replidec.utility import mkdirs
 current_work_dir = os.path.dirname(os.path.realpath(__file__))
 
 parser = ArgumentParser(description="Replidec, Replication cycle prediction tool for prokaryotic viruses", formatter_class=RawTextHelpFormatter)
-parser.add_argument("-v", "--version", action='version', version='Replidec v0.3.4')
+parser.add_argument("-v", "--version", action='version', version='Replidec v0.3.5')
 
 parser.add_argument("-p","--program", default='multi_fasta', required=True,
                     choices=['multi_fasta','genome_table','protein_table'],
