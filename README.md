@@ -46,11 +46,44 @@ pip3 install Replidec
 ## Usage: Overview
 
 ```
-Replidec [-h] [--version] -p {multiSeqAsOne,batch,multiSeqEachAsOne}
-         [-i INPUT_FILE] [-w WORKDIR] [-s SUMMARY] [-t THREADS] [-c HMMER_CRETERIA] [-H HMMER_PARAMETER] [-m MMSEQS_CRETERIA]
-         [-M MMSEQS_PARAMETER] [-b BLASTP_CRETERIA] [-B BLASTP_PARAMETER] [-d] [-D]
+Replidec, Replication cycle prediction tool for prokaryotic viruses
+
+options:
+  -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
+  -p , --program        { multi_fasta | genome_table | protein_table }
+                        
+                        multi_fasta mode:
+                        input is a fasta file and treat each sequence as one virus
+                        
+                        genome_table mode:
+                        input is a tab separated file with two columns
+                        ___1st column: sample name
+                        ___2nd column: path to the genome sequence file of the virus
+                        
+                        protein_table mode:
+                        input is a tab separated file with two columns
+                        ___1st column: sample name
+                        ___2nd column: path to the protein file of the virus
+                        
+  -i , --input_file     The input file, which can be a sequence file or an index table
+  -w , --work_dir       Directory to store intermediate and final results (default = ./Replidec_results)
+  -n , --file_name      Name of final summary file (default = prediction_summary.tsv)
+  -t , --threads        Number of parallel threads (default = 10)
+  -e , --hmmer_Eval     E-value threshold to filter hmmer result (default = 1e-5)
+  -E , --hmmer_parameters 
+                        Parameters used for hmmer (default = --noali --cpu 3)
+  -m , --mmseq_Eval     E-value threshold to filter mmseqs2 result (default = 1e-5)
+  -M , --mmseq_parameters 
+                        Parameter used for mmseqs
+                        (default = -s 7 --max-seqs 1 --alignment-mode 3 --alignment-output-mode 0 --min-aln-len 40 --cov-mode 0 --greedy-best-hits 1 --threads 3)
+  -b , --blastp_Eval    E-value threshold to filter blast result (default =1e-5)
+  -B , --blastp_parameter 
+                        Parameters used for blastp (default = -num_threads 3)
+  -d, --db_redownload   Remove and re-download database
 ```
-## Usage: database (-d & -D)
+
+## Usage: Download database (-d)
 
 Database used in Replidec will be download automatically. 
 
@@ -58,68 +91,67 @@ Location: will be download at the where Replidec installed
 
 If you want to redownload the database, `-d` parameter can be used. The older database will be mv to "discarded_db" in the workdir(-w); This dir can be removed manually by user.
 
-We provide 2 database for user choose. Use -D to choose database. all|prokaryote
 
-1. all: This database contain all proteins from the prokaryotic, eukaryotic
-virus and prophage.
-2. prokaryote: This database contain proteins from the prokaryotic virus and
-prophage. eukaryotic virus gene was removed from this database
-
-## Usage: Input(-i) and Propgram(-p)
+## Usage: Input (-i) and Propgram (-p)
 
 **Input file is different base on different program**
 
 Replidec cantain **3** different program:
 
-1. 'multiSeqAsOne'
-2. 'batch'
-3. 'multiSeqEachAsOne',
+1. 'multi_fasta'
+2. 'genome_table'
+3. 'protein_table',
 
-### multiSeqAsOne
-* multiSeqAsOne mode: input is a plain text file contain two coloumn (seprator must be **tab**)
-
-    * first column: sample name; this will be used as identfier in the output summary file 
+### multi_fasta mode:
+* input is a fasta file and treat each sequence as one virus.
+  * Example: <your_path>/viral_contigs.fasta
     
-    * second column: path of the **genome or contig** file from one virues (Each file can contain multi seq)
-
-    * Example: test/example/genome_test.small.index
-
     ```
-    seq1    example/genome_test/genome.test.fnaaa
-    seq2    example/genome_test/genome.test.fnaab
-    seq3    example/genome_test/genome.test.fnaac
+    >contig_1
+    TATCGATCGATCGATCGATCGATCGTACGTACGTACGTACG...
+    >contig_2
+    CATCGATCGATCGATCGATCGATCGATCGATCGATCGATCG...
+    ...
     ```
 
-### multiSeqEachAsOne
-* multiSeqEachAsOne mode: input is a **sequence** file and treat *each* seqence as from one virus and give each sequence a predict result;
+### genome_table mode:
+* input is a tab separated file with two columns.
     
-    * This mode will treat each sequence independently
+    * 1st column: sample name
+    * 2nd column: path to the genome sequence file of the virus
+    * Example: <your_path>/example_genomes.tsv
+ 
+    ```
+    contig_1    your/file/path/contig_1.fasta
+    contig_2    your/file/path/contig_2.fasta
+    contig_3    your/file/path/contig_3.fasta
+    ...
+    ```
+  
+### protein_table mode:
+* input is a tab separated file with two columns
 
-    * Example: test/example/test.contig.small.fa
-
-### batch
-* batch mode: input is a plain text file contain two coloumn (seprator must be **tab**);
-
-    * first column: sample name;
-
-    * second column: path of the **protein** file from one virues;
-
-    * Example: test/example/example.small.list
+    * 1st column: sample name
+    * 2nd column: path to the protein file of the virus
+    * Example: <your_path>/example_proteins.tsv
 
     ```
-    simulate_art_sample1.10 example/simulate_art_sample1.10.faa
-    simulate_art_sample1.11 example/simulate_art_sample1.11.faa
-    simulate_art_sample1.12 example/simulate_art_sample1.12.faa
+    contig_1_prot	your/file/path/contig_1.fasta
+    contig_2_prot	your/file/path/contig_2.fasta
+    contig_3_prot   your/file/path/contig_3.fasta
+    ...
     ```
 
-## Usage: Output(-w and -s)
-The output dirname can use `-w` to set and the name of summary file can use `-s` to set.
-Under output dir serveral dir and a summary file will be generated
-* BC_Inno: This dir contain the result file for dectect Innovirues
-* BC_mmseqs: This dir contain the result file for mapping result to our custom database
-* BC_pfam: This dir contain the result file for dectect the Integrase and Excisionase
-* BC_prodigal: This dir contain the result file for CDS prediction from genome or contig sequence. (-p batch will not generate this dir)
-* BC_predict.summary: This file is the summary file of the predict result. It contain multiple coloumns.
+## Usage: Output (-w and -n)
+The output directory can be assigned with `-w , --work_dir ` where the intermidiate files and the final prediction results will be stored.
+The name of the final summary file can be assigned with `-n , --file_name` argument.
+
+At the end of the analysis, the output directory would contain the following:
+* BC_Inno: This directory contains the result file for dectect Innovirues
+* BC_mmseqs: This directory contains the result file for mapping result to our custom database
+* BC_pfam: This directory contains the result file for dectect the Integrase and Excisionase
+* BC_prodigal: This directory contains the result file for CDS prediction from genome or contig sequence. (if {-p protein_table} is used, this directory will not be created)
+* prediction_summary.tsv: This file is the summary file of the predict result. It contain multiple coloumns.
     * sample_name: identifier. Can be sequence id or first coloumn the plain text input file. 
 
     * integrase_number: the number of genes mapped to integrase meet the creteria(set by -c).
@@ -142,13 +174,9 @@ Under output dir serveral dir and a summary file will be generated
 
 ## Example
 ```
-## test passed - multiSeqAsOne
-Replidec -p multiSeqAsOne -i example/genome_test.small.index -w multiSeqAsOne
 
-## test passed - multiSeqEachAsOne
-Replidec -p multiSeqEachAsOne -i example/test.contig.small.fa -w multiSeqEachAsOne
+## test passed - multi_fasta mode
+Replidec -p multi_fasta -i my/path/test_viral_contigs.fasta -w my/path/replidec_test_VC_results
 
-## test passed - batch
-Replidec -p batch -i example/example.small.list -w batch
 ```
 
