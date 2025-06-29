@@ -9,8 +9,8 @@ from subprocess import Popen
 
 
 
-def bayes_classifier_batch(inputfile, wd, db_name="prokaryte", summaryfile="BC_predict.summary",threads=10,
-         hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-5,
+def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary",threads=10,
+         hmm_criteria=1e-5, mmseqs_criteria=1e-5, blastp_criteria=1e-5,
          blastp_para="-num_threads 3",
          hmmer_para="--noali --cpu 3",
          mmseqs_para="-s 7 --max-seqs 1 --alignment-mode 3\
@@ -18,16 +18,17 @@ def bayes_classifier_batch(inputfile, wd, db_name="prokaryte", summaryfile="BC_p
 
     '''
     Aim: batch predict lifestyle
-    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_creteria=1e-5,mmseq_creteria=1e-5, blastp_creteria=1e-5)
+    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_criteria=1e-5,mmseq_criteria=1e-5, blastp_criteria=1e-5)
         inputfile: a tab seperate file contain two column.
             first column: sample name;
             second column: path of the protein file;
         wd: work path where put the result
         summaryfile: file name for summary of the predict output. location will be under the wd path
-        hmm_creteria: creteria to filter pfam evalue greater than x (default: 1e-5)
-        mmseqs_creteria: creteria to filter mmseqs evalue greater than x (default: 1e-5)
-        blastp_creteria: creteria to filter blastp evalue greater than x (default: 1e-5)
+        hmm_criteria: criteria to filter pfam evalue greater than x (default: 1e-5)
+        mmseqs_criteria: criteria to filter mmseqs evalue greater than x (default: 1e-5)
+        blastp_criteria: criteria to filter blastp evalue greater than x (default: 1e-5)
     '''
+
     print("Check db")
     fileDir = os.path.dirname(os.path.abspath(__file__))
     checkdb_and_download(fileDir)
@@ -40,11 +41,10 @@ def bayes_classifier_batch(inputfile, wd, db_name="prokaryte", summaryfile="BC_p
 
     executor = ThreadPoolExecutor(max_workers=threads)
     all_task = []
-    kwargsD={"hmm_creteria":hmm_creteria, "mmseqs_creteria":mmseqs_creteria, "blastp_creteria":blastp_creteria,
-             "blastp_para":blastp_para,"hmmer_para":hmmer_para,"mmseqs_para":mmseqs_para,
-             "db_name":db_name}
+    kwargsD={"hmm_criteria":hmm_criteria, "mmseqs_criteria":mmseqs_criteria, "blastp_criteria":blastp_criteria,
+             "blastp_para":blastp_para,"hmmer_para":hmmer_para,"mmseqs_para":mmseqs_para}
 
-    ## n is try to control the sceond job will be submit after the first, cause some env or dir will be confilct when run all jobs at same time
+    ## n is try to control the second job will be submitted after the first, cause some env or dir will be conflict when run all jobs at same time
     n=0
     with open(inputfile) as f:
         for line in f:
@@ -53,18 +53,16 @@ def bayes_classifier_batch(inputfile, wd, db_name="prokaryte", summaryfile="BC_p
             if n==2:
                 time.sleep(10)
             all_task.append(executor.submit(bayes_classifier_single, path, sample_name, wd, **kwargsD))
-            #res = bayes_classifier_single(
-                #path, sample_name, wd, hmm_creteria, mmseqs_creteria,blastp_creteria,blastp_para,hmmer_para,mmseqs_para)
-            #prefix, inte_label, excision_label, pfam_label, p_total_temperate, p_total_lytic, bc_label, final_label = res
+
         for future in as_completed(all_task):
             res = future.result()
             res.append(path)
             opt.write("\t".join([str(i) for i in res])+"\n")
-            #opt.flush()
+
     opt.close()
 
-def bayes_classifier_contig(inputfile, wd, db_name="prokaryte",summaryfile="BC_predict.summary",threads=10,
-          hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-5,
+def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", threads=10,
+          hmm_criteria=1e-5, mmseqs_criteria=1e-5, blastp_criteria=1e-5,
           blastp_para="-num_threads 3",
           hmmer_para="--noali --cpu 3",
           mmseqs_para="-s 7 --max-seqs 1 --alignment-mode 3\
@@ -76,14 +74,15 @@ def bayes_classifier_contig(inputfile, wd, db_name="prokaryte",summaryfile="BC_p
 
     Process: prodigal --> lifestyleBC
 
-    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_creteria=1e-5,mmseq_creteria=1e-5, blastp_creteria=1e-5)
+    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_criteria=1e-5,mmseq_criteria=1e-5, blastp_criteria=1e-5)
         inputfile: contig file
         wd: work path where put the result
         summaryfile: file name for summary of the predict output. location will be under the wd path
-        hmm_creteria: creteria to filter pfam evalue greater than x (default: 1e-5)
-        mmseqs_creteria: creteria to filter mmseqs evalue greater than x (default: 1e-5)
-        blastp_creteria: creteria to filter blastp evalue greater than x (default: 1e-5)
+        hmm_criteria: criteria to filter pfam evalue greater than x (default: 1e-5)
+        mmseqs_criteria: criteria to filter mmseqs evalue greater than x (default: 1e-5)
+        blastp_criteria: criteria to filter blastp evalue greater than x (default: 1e-5)
     '''
+
     print("Check db")
     fileDir = os.path.dirname(os.path.abspath(__file__))
     checkdb_and_download(fileDir)
@@ -95,11 +94,17 @@ def bayes_classifier_contig(inputfile, wd, db_name="prokaryte",summaryfile="BC_p
 
     executor = ThreadPoolExecutor(max_workers=threads)
     all_task = []
-    kwargsD={"hmm_creteria":hmm_creteria, "mmseqs_creteria":mmseqs_creteria, "blastp_creteria":blastp_creteria,
-              "blastp_para":blastp_para,"hmmer_para":hmmer_para,"mmseqs_para":mmseqs_para,
-              "db_name":db_name}
+    kwargsD={"hmm_criteria":hmm_criteria, "mmseqs_criteria":mmseqs_criteria, "blastp_criteria":blastp_criteria,
+              "blastp_para":blastp_para,"hmmer_para":hmmer_para,"mmseqs_para":mmseqs_para}
 
     faaDict = {}
+
+    if inputfile != "":
+        if not os.path.exists(inputfile):
+            raise FileNotFoundError(f"Input file '{inputfile}' does not exist.")
+    else:
+        print ("Please provide an input")
+
     for seq in SeqIO.parse(inputfile,"fasta"):
         tmpdir = "%s/tmp"%wd
         mkdirs(tmpdir)
@@ -108,7 +113,6 @@ def bayes_classifier_contig(inputfile, wd, db_name="prokaryte",summaryfile="BC_p
         SeqIO.write(seq,tmpfile,"fasta")
         faaFile = runProdigal(tmpfile, seq.id, "%s/BC_prodigal"%wd, program="meta", otherPara="-g 11")
         faaDict[seq.id] = faaFile
-    #print(faaDict)
 
     n = 0
     for sample_name,faaFile in faaDict.items():
@@ -117,9 +121,7 @@ def bayes_classifier_contig(inputfile, wd, db_name="prokaryte",summaryfile="BC_p
             if n==2:
                 time.sleep(10)
             all_task.append(executor.submit(bayes_classifier_single, faaFile, sample_name, wd, **kwargsD))
-            ## 串行(deprecated)
-            #res = bayes_classifier_single(
-            #    path, sample_name, wd, hmm_creteria, mmseqs_creteria,blastp_creteria,blastp_para,hmmer_para,mmseqs_para)
+
     for future in as_completed(all_task):
         res = future.result()
         faaFile = faaDict[res[0]]
@@ -131,8 +133,8 @@ def bayes_classifier_contig(inputfile, wd, db_name="prokaryte",summaryfile="BC_p
     opt.close()
 
 
-def bayes_classifier_genomes(inputfile, wd, db_name="prokaryte",summaryfile="BC_predict.summary",threads=10,
-           hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-5,
+def bayes_classifier_genomes(inputfile, wd,summaryfile="BC_predict.summary",threads=10,
+           hmm_criteria=1e-5, mmseqs_criteria=1e-5, blastp_criteria=1e-5,
            blastp_para="-num_threads 3",
            hmmer_para="--noali --cpu 3",
            mmseqs_para="-s 7 --max-seqs 1 --alignment-mode 3\
@@ -143,15 +145,15 @@ def bayes_classifier_genomes(inputfile, wd, db_name="prokaryte",summaryfile="BC_
 
     Process: prodigal --> lifestyleBC
 
-    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_creteria=1e-5, mmseqs_creteria=1e-5, blastp_creteria=1e-5)
+    Usage: bayes_classifier_batch(inputfile,wd,summaryfile,hmm_criteria=1e-5, mmseqs_criteria=1e-5, blastp_criteria=1e-5)
         inputfile: a tab seperate file contain two column.
             first column: sample name;
             second column: path of the genome file;
         wd: work path where put the result
         summaryfile: file name for summary of the predict output. location will be under the wd path
-        hmm_creteria: creteria to filter pfam evalue greater than x (default: 1e-5)
-        mmseqs_creteria: creteria to filter mmseqs evalue greater than x (default: 1e-5)
-        blastp_creteria: creteria to filter blastp evalue greater than x (default: 1e-5)
+        hmm_criteria: criteria to filter pfam evalue greater than x (default: 1e-5)
+        mmseqs_criteria: criteria to filter mmseqs evalue greater than x (default: 1e-5)
+        blastp_criteria: criteria to filter blastp evalue greater than x (default: 1e-5)
     '''
     print("Check db")
     fileDir = os.path.dirname(os.path.abspath(__file__))
@@ -164,9 +166,8 @@ def bayes_classifier_genomes(inputfile, wd, db_name="prokaryte",summaryfile="BC_
 
     executor = ThreadPoolExecutor(max_workers=threads)
     all_task = []
-    kwargsD={"hmm_creteria":hmm_creteria, "mmseqs_creteria":mmseqs_creteria, "blastp_creteria":blastp_creteria,
-              "blastp_para":blastp_para,"hmmer_para":hmmer_para,"mmseqs_para":mmseqs_para,
-              "db_name":db_name}
+    kwargsD={"hmm_criteria":hmm_criteria, "mmseqs_criteria":mmseqs_criteria, "blastp_criteria":blastp_criteria,
+              "blastp_para":blastp_para,"hmmer_para":hmmer_para,"mmseqs_para":mmseqs_para}
     faaDict = {}
 
     with open(inputfile) as f:
@@ -183,15 +184,12 @@ def bayes_classifier_genomes(inputfile, wd, db_name="prokaryte",summaryfile="BC_
                 if n==2:
                     time.sleep(10)
                 all_task.append(executor.submit(bayes_classifier_single, faaFile, sample_name, wd, **kwargsD))
-                ## 串行(deprecated)
-                #res = bayes_classifier_single(
-                #    path, sample_name, wd, hmm_creteria, mmseqs_creteria,blastp_creteria,blastp_para,hmmer_para,mmseqs_para)
         for future in as_completed(all_task):
             res = future.result()
             faaFile = faaDict[res[0]]
             res.append(faaFile)
             opt.write("\t".join([str(i) for i in res])+"\n")
-            #opt.flush()
+
     opt.close()
 
 if __name__ == "__main__":
