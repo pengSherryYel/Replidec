@@ -358,33 +358,44 @@ def check_db_md5(db_dir):
     cmd = "cd %s/db && md5sum --check md5sum.list && cd -" % (db_dir)
     obj = Popen(cmd, shell=True, stdout=PIPE)
     obj.wait()
+
     print([i.decode("utf-8") for i in obj.stdout.readlines()])
-    if "FAILED" in ";".join([i.decode("utf-8") for i in obj.stdout.readlines()]):
-        print("Please recheck the databse, database file have wrong information.")
+    l = [i.decode("utf-8") for i in obj.stdout.readlines()]
+    if "FAILED" in ";".join([i.strip("\n") for i in l]):
+        print("WARNING: Please recheck the databse, database file have wrong information.")
         sys.exit()
     else:
-        print("db download done!")
+        print("db check done!")
 
 
 def checkdb_and_download(scriptPos, redownload=False):
     if redownload:
         mkdirs("discarded_db")
         if os.path.exists("%s/db" % scriptPos):
-            cmd = "mv %s/db discarded_db" % scriptPos
+            cmd = "mv -f %s/db discarded_db " % scriptPos
             obj = Popen(cmd, shell=True)
             obj.wait()
 
     if not os.path.exists(os.path.join(scriptPos, "db")):
         print("db not exist! download database ...")
-        url = "https://zenodo.org/record/8101942/files/db_v0.3.1.tar.gz"
+        url = "https://zenodo.org/records/15781219/files/db_v0.3.2.tar.gz"
         file = os.path.split(url)[-1]
         cmd = "wget {0} -P {1} && cd {1} && tar -zxvf {2} && rm -rf {2}".format(
             url, scriptPos, file
         )
-        obj = Popen(cmd, shell=True, stdout=PIPE)
-        obj.wait()
+        
+        ## add error control for db download
+        try:
+            obj = Popen(cmd, shell=True, stdout=PIPE)
+            obj.wait()
 
-        check_db_md5(scriptPos)
+            check_db_md5(scriptPos)
+        except:
+            print("db download error!! Please RERUN with -d")
+            sys.exit()
+        else:
+            print("db download done!")
+
     else:
         print("db exist!")
 
@@ -403,7 +414,7 @@ def bayes_classifier_single(
     """
     Aim: single predict lifestyle
 
-    Process: have 2 phase
+    Process: have 3 phase
         phase 1: align to the integrase and excisionase(16 pfam id in total) -- hmmer
         phase 2: align to our protein database -- mmseqs easy-search
         phase 3: dected innovirues -- hmmer and blastp
@@ -453,7 +464,7 @@ def bayes_classifier_single(
 
     # phase 2 bayes classifier
     # run mmseqs search
-    print("Using prokaryote protein v04_2025 as DB")
+    print("Using prokaryote only protein v04_2025 as DB")
     bc_mmseqsDB = os.path.join(
             fileDir, "db/bayes_mmseqs_index/training_prot_04_2025"
     )
@@ -467,7 +478,7 @@ def bayes_classifier_single(
 
     # load score file
     score_file = os.path.join(
-            fileDir, "db/training_cluster_04_2025.stat.scoreOpt.tsv"
+            fileDir, "db/prokaryote_only_training_cluster_04_2025.stat.scoreOpt.tsv"
     )
 
     member2scoreD = load_scoreD(score_file)

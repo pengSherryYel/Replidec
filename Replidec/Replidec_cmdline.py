@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from Replidec.Replidec_multi import bayes_classifier_batch,bayes_classifier_contig,bayes_classifier_genomes
 from argparse import RawTextHelpFormatter,ArgumentParser,ArgumentDefaultsHelpFormatter
-from Replidec.Replidec_test import checkdb_and_download
+from Replidec.Replidec import checkdb_and_download
 from Replidec.utility import mkdirs
 
 
