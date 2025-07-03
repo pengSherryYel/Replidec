@@ -23,10 +23,11 @@ conda install -c denglab -c conda-forge -c bioconda replidec
 ### Method 2: using Docker
 
 ```bash
-docker pull quay.io/biocontainers/replidec:0.3.4--pyhdfd78af_0 
-docker run quay.io/biocontainers/replidec:0.3.4--pyhdfd78af_0 Replidec -h
+docker pull quay.io/biocontainers/replidec:0.3.5--pyhdfd78af_0
+docker run quay.io/biocontainers/replidec:0.3.5--pyhdfd78af_0 Replidec -h
 ## Example
-docker run -v /your/host/data:/data/ quay.io/biocontainers/replidec:0.3.4--pyhdfd78af_0 Replidec -i data/your_inputfile -p multiSeqEachAsOne -w data
+docker run -v /your/host/data:/data/ quay.io/biocontainers/replidec:0.3.5--pyhdfd78af_0 Replidec -i data/your_inputfile -p
+choose_mode_based_on_your_input_type -w data
 ```
 
 ### Method 3: using pip
@@ -103,7 +104,7 @@ Replidec cantain **3** different program:
 3. 'protein_table',
 
 ### multi_fasta mode:
-* input is a fasta file and treat each sequence as one virus.
+* input is a **fasta** file and treat each sequence as one virus.
   * Example: <your_path>/viral_contigs.fasta
     
     ```
@@ -115,7 +116,7 @@ Replidec cantain **3** different program:
     ```
 
 ### genome_table mode:
-* input is a tab separated file with two columns.
+* input is a **tab** separated file with two columns.
     
     * 1st column: sample name
     * 2nd column: path to the genome sequence file of the virus
@@ -129,7 +130,7 @@ Replidec cantain **3** different program:
     ```
   
 ### protein_table mode:
-* input is a tab separated file with two columns
+* input is a **tab** separated file with two columns
 
     * 1st column: sample name
     * 2nd column: path to the protein file of the virus
@@ -172,11 +173,50 @@ At the end of the analysis, the output directory would contain the following:
 
     * path: path of input faa file
 
-## Example
+
+## Example (Data in test folder, please navigate to test folder first)
+```
+cd test
+
+## Conda
+## test passed - genome_table
+replidec -p genome_table -i example/genome_test.small.index -w opt_folder_genome_table
+
+## test passed - multi_fasta
+replidec -p multi_fasta -i example/test.contig.small.fa -w opt_folder_multi_fasta
+
+## test passed - protein_table
+replidec -p protein_table -i example/example.small.list -w opt_folder_protein_table
+
+
+## Docker
+docker run -v /Your_path_clone_replidec/Replidec/test:/data/ quay.io/biocontainers/replidec:0.3.5--pyhdfd78af_0 Replidec -p multi_fasta -i /data/example/test.contig.small.new.fa -w /data/opt_folder_docker_multi_fasta
 ```
 
-## test passed - multi_fasta mode
-Replidec -p multi_fasta -i my/path/test_viral_contigs.fasta -w my/path/replidec_test_VC_results
 
-```
+## Issues
+### Database can not be downloaded automatically 
+If the dataset cannot be automatically downloaded from Zenodo due to regional access restrictions, you may manually add it instead. The same database has also been uploaded to OSF as an alternative source.
+
+1. **Locate your Replidec installation path**  
+After installing Replidec via Conda or Docker, locate the installed directory. Typically, it can be found at:
+`your_conda_path/envs/env_name/lib/python*/site-packages/Replidec`
+
+
+2. **Navigate to the Replidec folder**  
+Use the terminal to move into the directory:  
+`cd your_conda_path/envs/env_name/lib/python*/site-packages/Replidec`
+
+3. **Download the database manually from OSF (Project name: Replidec)**  
+Access the alternative download link here:
+👉 https://osf.io/thpkb/files/osfstorage
+
+4. **Extract the database**  
+After downloading, extract the contents of the archive into the Replidec directory and a folder named "db" will be created:
+`tar -zxvf db_v0.3.2.tar.gz`  
+✅ Note: Make sure the extracted folder can be found in this path `your_conda_path/envs/env_name/lib/python*/site-packages/Replidec/db`.
+
+For now, everything is fixed, enjoy play with replidec.
+
+
 
