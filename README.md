@@ -6,11 +6,11 @@
 
 ## Aim
 
-Use bayes classifier combine with homology search to predict virus replication cycle
+Use a Bayesian classifier combined with a homology search to predict a virus replication cycle
 
 ## Install
 
-### Method 1: using Conda (Recommend using bioconda with latest version)
+### Method 1: using Conda (Recommend using bioconda with the latest version)
 
 ```bash
 conda create -n replidec
@@ -32,7 +32,7 @@ choose_mode_based_on_your_input_type -w data
 
 ### Method 3: using pip
 
-If you install using pip, please make sure that `mmseqs`, `hmmsearch` and `blastp` is set to $PATH, these software can equal or higher than version list below
+If you install using pip, please make sure that `mmseqs`, `hmmsearch`, and `blastp` are set to $PATH, these software can be equal to or higher than the version list below
 
 - MMseqs2 Version: 13.45111
 
@@ -85,19 +85,18 @@ options:
 ```
 
 ## Usage: Download database (-d)
+The database used in Replidec will be downloaded automatically. 
 
-Database used in Replidec will be download automatically. 
+Location: will be downloaded at the location where Replidec is installed
 
-Location: will be download at the where Replidec installed
-
-If you want to redownload the database, `-d` parameter can be used. The older database will be mv to "discarded_db" in the workdir(-w); This dir can be removed manually by user.
+If you want to redownload the database, the `-d` parameter can be used. The older database will be moved to "discarded_db" in the workdir(-w); This dir can be removed manually by the user.
 
 
 ## Usage: Input (-i) and Propgram (-p)
 
-**Input file is different base on different program**
+**The input file is different based on different programs**
 
-Replidec cantain **3** different program:
+Replidec offers **3** different programs:
 
 1. 'multi_fasta'
 2. 'genome_table'
@@ -144,32 +143,31 @@ Replidec cantain **3** different program:
     ```
 
 ## Usage: Output (-w and -n)
-The output directory can be assigned with `-w , --work_dir ` where the intermidiate files and the final prediction results will be stored.
-The name of the final summary file can be assigned with `-n , --file_name` argument.
+The output directory can be assigned with `-w , --work_dir `, where the intermediate files and the final prediction results will be stored. The name of the final summary file can be assigned with the `-n , --file_name` argument.
 
 At the end of the analysis, the output directory would contain the following:
 * BC_Inno: This directory contains the result file for dectect Innovirues
 * BC_mmseqs: This directory contains the result file for mapping result to our custom database
 * BC_pfam: This directory contains the result file for dectect the Integrase and Excisionase
-* BC_prodigal: This directory contains the result file for CDS prediction from genome or contig sequence. (if {-p protein_table} is used, this directory will not be created)
-* prediction_summary.tsv: This file is the summary file of the predict result. It contain multiple coloumns.
-    * sample_name: identifier. Can be sequence id or first coloumn the plain text input file. 
+* BC_prodigal: This directory contains the result file for CDS prediction from genome or contig sequence. (If {-p protein_table} is used, this directory will not be created.)
+* prediction_summary.tsv: This file is the summary file of the prediction result. It contains multiple columns.
+    * sample_name: identifier. Can be a sequence ID or the first column of the plain text input file. 
 
     * integrase_number: the number of genes mapped to integrase meet the creteria(set by -c).
 
     * excisionase_number: the number of genes mapped to excisionase meet the creteria(set by -c).
 
-    * pfam_label: if contain integrase or excisionase, label will be "Temperate". otherwise "Virulent".
+    * pfam_label: if it contains integrase or excisionase, the label will be "Temperate". Otherwise "Virulent".
 
     * bc_temperate: conditional probability of temperate|genes. 
 
     * bc_virulent: conditional probability of virulent|genes. 
 
-    * bc_label: if bc_temperate greater than bc_virulent, label will be "Temperate". otherwise "Virulent".
+    * bc_label: if bc_temperate greater than bc_virulent, label will be "Temperate". Otherwise "Virulent".
 
-    * final_label: if pfam_label and bc_label both is Temperate, then label will be "Temperate"; if Innovirues marker gene exist, then label will be "Chronic"; otherwise "Virulent".
+    * final_label: if pfam_label and bc_label both is Temperate, then label will be "Temperate"; if an Innovirues marker gene exists, then label will be "Chronic"; otherwise "Virulent".
 
-    * match_gene_number:  the number of genes mapped to our custom databse.
+    * match_gene_number:  the number of genes mapped to our custom database.
 
     * path: path of input faa file
 
@@ -212,11 +210,11 @@ Access the alternative download link here:
 👉 https://osf.io/thpkb/files/osfstorage
 
 4. **Extract the database**  
-After downloading, extract the contents of the archive into the Replidec directory and a folder named "db" will be created:
+After downloading, extract the contents of the archive into the Replidec directory, and a folder named "db" will be created:
 `tar -zxvf db_v0.3.2.tar.gz`  
 ✅ Note: Make sure the extracted folder can be found in this path `your_conda_path/envs/env_name/lib/python*/site-packages/Replidec/db`.
 
-For now, everything is fixed, enjoy play with replidec.
+For now, everything is fixed. Enjoy playing with Replidec!
 
 
 
