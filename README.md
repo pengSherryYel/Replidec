@@ -1,4 +1,5 @@
-# Replidec: Replication Cycle Decipher for Phages
+![Replidec Banner](replidec_banner.jpg)
+# RepliDec: Replication Cycle Decipher for Phages
 
 [![PyPI](https://img.shields.io/pypi/v/Replidec.svg)](https://pypi.python.org/pypi/Replidec)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/replidec/badges/version.svg)](https://anaconda.org/bioconda/replidec)
@@ -6,7 +7,7 @@
 
 ## Aim
 
-Use a Bayesian classifier combined with a homology search to predict a virus replication cycle
+RepliDec employs a Bayesian classifier combined with homology searching to accurately predict the replication cycle of prokaryotic viruses (Phages).
 
 ## Install
 
@@ -47,7 +48,7 @@ pip3 install Replidec
 ## Usage: Overview
 
 ```
-Replidec, Replication cycle prediction tool for prokaryotic viruses
+Replidec [-p PROGRAM] [-i INPUT] [-w WORK_DIR] [-h HELP] [options]
 
 options:
   -h, --help            show this help message and exit
@@ -70,7 +71,7 @@ options:
   -i , --input_file     The input file, which can be a sequence file or an index table
   -w , --work_dir       Directory to store intermediate and final results (default = ./Replidec_results)
   -n , --file_name      Name of final summary file (default = prediction_summary.tsv)
-  -t , --threads        Number of parallel threads (default = 10)
+  -t , --threads        Number of parallel threads (default = 4)
   -e , --hmmer_Eval     E-value threshold to filter hmmer result (default = 1e-5)
   -E , --hmmer_parameters 
                         Parameters used for hmmer (default = --noali --cpu 3)
@@ -92,7 +93,7 @@ Location: will be downloaded at the location where Replidec is installed
 If you want to redownload the database, the `-d` parameter can be used. The older database will be moved to "discarded_db" in the workdir(-w); This dir can be removed manually by the user.
 
 
-## Usage: Input (-i) and Propgram (-p)
+## Usage: Input (-i) and program (-p)
 
 **The input file is different based on different programs**
 
@@ -168,8 +169,6 @@ At the end of the analysis, the output directory would contain the following:
     * final_label: if pfam_label and bc_label both is Temperate, then label will be "Temperate"; if an Innovirues marker gene exists, then label will be "Chronic"; otherwise "Virulent".
 
     * match_gene_number:  the number of genes mapped to our custom database.
-
-    * path: path of input faa file
 
 
 ## Example (Data in test folder, please navigate to test folder first)

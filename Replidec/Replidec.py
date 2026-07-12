@@ -1,171 +1,115 @@
 #!/usr/bin/env python3
 # coding: utf-8
-# author: sherry peng
+# authors: sherry peng, torben sanders, erfan khamespanah
 # mail: xue.peng@helmholtz-muenchen.de
-# date: 2021.12.6
+# date: 2026.07.09
 
-
-import re, sys
+import re
+import sys
 from collections import defaultdict
 import os
 from subprocess import Popen, PIPE
-import math
+import time
 from Replidec.utility import mkdirs, checkEnv
-from Bio import Seq, SeqIO
-from threading import Thread
+
+# Master remote references pointing to static versioned database checkpoints
+DATABASE_MANIFEST = {
+    "version": "0.3.2",
+    "url": "https://zenodo.org/records/15781219/files/db_v0.3.2.tar.gz",
+    "integrase_hmm": "db/integrase_pfv34.hmm",
+    "excisionase_hmm": "db/excisionase_pfv34.hmm",
+    "mmseqs_index": "db/bayes_mmseqs_index/training_prot_04_2025",
+    "scoring_matrix": "db/prokaryote_only_training_cluster_04_2025.stat.scoreOpt.tsv",
+    "inovirus_hmm": "db/Final_marker_morph.hmm",
+    "inovirus_blast": "db/Marker_ALV1"
+}
+
+def _get_timestamp():
+    """Generates standard tracking prefixes for log reporting."""
+    return time.strftime("[%Y-%m-%d %H:%M:%S]")
 
 
-# ------ function ------
-def runProdigal(
-        inputseq,
-        prefix,
-        wd,
-        program="meta",
-        otherPara="-g 11"
-):
-
+def runProdigal(inputseq, prefix, wd, program="meta", otherPara="-g 11"):
     """
-    Aim: run prodigal to predict gene from contig
-
-    Usage: runProdigal(inputseq,prefix,wd,program="meta")
-        inputfile: input seq file
-        prefix: output prefix
-        wd: work path where put the result
-        program: euqal to -p parameter in prodigal(meta(default)|single)
-        otherPara: parameter for run the prodigal
-            default: "-g 11"
-
-    Return: output file path (*.faa)
+    Runs Prodigal for gene calling.
+    Redirects stdout/stderr to an isolated log within the user's working directory.
     """
-
     checkEnv("prodigal")
     mkdirs(wd)
-    cmd = "prodigal -i {0} {4} -a {2}/{1}.prodigal.gene.faa -d {2}/{1}.prodigal.gene.ffn -p {3} -f gff -o {2}/{1}.temp 2>&1 >>log".format(
-        inputseq, prefix, wd, program, otherPara
+    log_file = os.path.join(wd, "external_tools.log")
+
+    cmd = "prodigal -i {0} {4} -a {2}/{1}.prodigal.gene.faa -d {2}/{1}.prodigal.gene.ffn -p {3} -f gff -o {2}/{1}.temp >> {5} 2>&1".format(
+        inputseq, prefix, wd, program, otherPara, log_file
     )
-    print("RUN command: %s\n" % cmd)
+
+    print(f"{_get_timestamp()} [INFO] Running Prodigal: {prefix}")
     obj = Popen(cmd, shell=True)
     obj.wait()
-    print("prodigal done!")
-    return "%s/%s.prodigal.gene.faa" % (wd, prefix)
+    return os.path.join(wd, f"{prefix}.prodigal.gene.faa")
 
 
-def runHmmsearch(
-        inputfile,
-        prefix,
-        wd,
-        hmmModel,
-        otherPara="--noali --cpu 1"
-):
-
-    """
-    Aim: run hmmer search for a pfam hmm database
-
-    Usage: runHmmsearch(inputfile,prefix,wd,hmmModel,otherPara="--cpu 1")
-        inputfile: a protein set from a metabin or a genome
-        prefix: sample identifier, will be used as a prefix to the output.
-        wd: work path where put the result
-        hmmModel: a pfam *.hmm file
-        otherPara: parameter for run the hmmer search.
-            default: "--cpu 1"
-
-    Return: output file path (*.tblout)
-    """
-
+def runHmmsearch(inputfile, prefix, wd, hmmModel, otherPara="--noali --cpu 1"):
+    """Executes target profile scans against reference hidden Markov databases."""
     checkEnv("hmmsearch")
     mkdirs(wd)
-    cmd = "hmmsearch {4} -o {2}/{1}.hmmsearch.out --tblout {2}/{1}.hmmsearch.tblout {3} {0} 2>&1 >>log".format(
-        inputfile, prefix, wd, hmmModel, otherPara
+    log_file = os.path.join(wd, "external_tools.log")
+    output_tbl = os.path.join(wd, f"{prefix}.hmmsearch.tblout")
+    output_out = os.path.join(wd, f"{prefix}.hmmsearch.out")
+
+    cmd = "hmmsearch {4} -o {5} --tblout {2} {3} {0} >> {1} 2>&1".format(
+        inputfile, log_file, output_tbl, hmmModel, otherPara, output_out
     )
-    print("RUN command: %s\n" % cmd)
+
+    print(f"{_get_timestamp()} [INFO] Running HMMer search: {prefix}")
     obj = Popen(cmd, shell=True)
     obj.wait()
-    print("hmmsearch done!")
-    return "%s/%s.hmmsearch.tblout" % (wd, prefix)
+    return output_tbl
 
 
-def runMmseqsEasysearch(
-    inputfile,
-    prefix,
-    wd,
-    hmmDB,
-    otherPara="-s 7 --max-seqs 1 --alignment-mode 3 --alignment-output-mode 0 --min-aln-len 40  --cov-mode 0 --greedy-best-hits 1 --threads 30",
-):
-    """
-    Aim: run mmseq easy search for a fasta database
-
-    Usage: runMmseqsEasysearch(inputfile,prefix,wd,hmmDB,otherPara)
-        inputfile: a protein set from a metabin or a genome
-        prefix: sample ientifier, will be used as a prefix to the output.
-        wd: work path where put the result
-        hmmDB: a fasta database built from mmseqs creatdb command
-        otherPara: parameter for run the mmseqs easy search.
-            default: "-s 7 --max-seqs 1 --alignment-mode 3 --alignment-output-mode 0 --min-aln-len 40
-                      --cov-mode 0 --greedy-best-hits 1 --threads 30"
-
-    Return: output file path (*.m8)
-    """
-
+def runMmseqsEasysearch(inputfile, prefix, wd, hmmDB,
+                        otherPara="-s 7 --max-seqs 1 --alignment-mode 3 --alignment-output-mode 0 "
+                                  "--min-aln-len 40 --cov-mode 0 --greedy-best-hits 1 --threads 30"):
+    """Executes fast protein homology searches using MMseqs2."""
     checkEnv("mmseqs")
     mkdirs(wd)
+    log_file = os.path.join(wd, "external_tools.log")
 
-    tmpdir = "%s_tmp" % prefix
+    tmpdir = os.path.join(wd, f"{prefix}_tmp")
     mkdirs(tmpdir)
-    output = os.path.join(wd, "%s.mmseqs.m8" % prefix)
+    output = os.path.join(wd, f"{prefix}.mmseqs.m8")
 
-    cmd = "mmseqs easy-search {0} {1} {2} {3} {4} 2>&1 >>log && rm -rf {3} && echo 'mmesqs search done!'".format(
-        inputfile, hmmDB, output, tmpdir, otherPara
+    cmd = "mmseqs easy-search {0} {1} {2} {3} {4} >> {5} 2>&1 && rm -rf {3}".format(
+        inputfile, hmmDB, output, tmpdir, otherPara, log_file
     )
-    print("RUN command: %s\n" % cmd)
+
+    print(f"{_get_timestamp()} [INFO] Running MMseqs2 easy-search: {prefix}")
     obj = Popen(cmd, shell=True)
     obj.wait()
     return output
 
 
-def runBlastpsearch(
-    inputfile,
-    prefix,
-    wd,
-    db_prefix,
-    evalue="1e-3",
-    otherPara="-num_threads 3"
-):
-
-    """
-    Aim: run blastp search for a fasta database(db should build first)
-
-    Usage: runBlastpsearch(inputfile,db,prefix,wd,evalue,otherPara)
-        inputfile: a protein set from a metabin or a genome
-        db_prefix: database prefix for the blast(db should build before)
-        prefix: sample ientifier, will be used as a prefix to the output.
-        wd: work path where put the result
-        evalue: evaule used in blastp command (default: 1e-3)
-        otherPara: parameter for run the blastp search. (default: -num_threads 3)
-
-    Return: output file path (*.m8)
-    """
-
+def runBlastpsearch(inputfile, prefix, wd, db_prefix, evalue="1e-3", otherPara="-num_threads 3"):
+    """Standard BLASTp sequence alignment."""
     checkEnv("blastp")
     mkdirs(wd)
+    log_file = os.path.join(wd, "external_tools.log")
+    output = os.path.join(wd, f"{prefix}.blastp.m8")
 
-    output = os.path.join(wd, "%s.blastp.m8" % prefix)
-
-    cmd = "blastp -query {0} -db {1} -out {2} -outfmt 6 -evalue {3} {4} 2>&1 >>log".format(
-        inputfile, db_prefix, output, evalue, otherPara
+    cmd = "blastp -query {0} -db {1} -out {2} -outfmt 6 -evalue {3} {4} >> {5} 2>&1".format(
+        inputfile, db_prefix, output, evalue, otherPara, log_file
     )
-    print("RUN command: %s\n" % cmd)
+
+    print(f"{_get_timestamp()} [INFO] Running BLASTp search: {prefix}")
     obj = Popen(cmd, shell=True)
     obj.wait()
     return output
 
 
 def load_scoreD(score_file):
-
     """
-    Aim: Parse the score file
-    Return: dict. d[member] = [temperate_score, lytic_score]
+    Parses the pre-computed cluster conditional log-probability matrix.
+    Returns: Dict mapping a reference element to its [temperate_score, lytic_score].
     """
-
     d = {}
     with open(score_file) as f:
         for line in f:
@@ -176,364 +120,215 @@ def load_scoreD(score_file):
 
 
 def load_hmmsearch_opt(hmmsearch_opt, criteria=1e-5):
-
     """
-    Aim: parse the hmmersearch output. this file contain multiple columns. is the output from -tblout parameter
-
-    Return: dict.  d[refname][annoacc] = description
+    Parses sequential single-sample HMMER --tblout files.
     """
-
-    print("loading mmsearch output")
     annoD = defaultdict(dict)
+    if not os.path.exists(hmmsearch_opt):
+        return annoD
     with open(hmmsearch_opt) as f:
         for line in f:
             if not line.startswith("#"):
                 t = re.split(r"\s+", line.strip("\n"))
-                (
-                    target_name,
-                    target_accession,
-                    query_name,
-                    accession,
-                    Evalue,
-                    score,
-                    bias,
-                    bst_Evalue,
-                    bst_score,
-                    bst_bias,
-                    exp,
-                    reg,
-                    clu,
-                    ov,
-                    env,
-                    dom,
-                    rep,
-                    inc,
-                    *description_of_target,
-                ) = t
-                accession = accession.split(".")[0]
+                if len(t) < 5:
+                    continue
+                target_name, _, query_name, _, Evalue, *rest = t
+                bst_Evalue = rest[2] if len(rest) > 2 else Evalue
+                accession = t[3].split(".")[0]
 
-                if float(Evalue) <= float(criteria) and float(bst_Evalue) <= float(
-                    criteria
-                ):
+                if float(Evalue) <= float(criteria) and float(bst_Evalue) <= float(criteria):
                     annoD[target_name][accession] = query_name
         return annoD
 
 
+def load_hmmsearch_opt_batched(hmmsearch_opt, criteria=1e-5):
+    """
+    High-speed parser for batch/consolidated HMMER tabular outputs.
+    Extracts column 1 (target protein sequence identifiers) into an optimized set.
+    """
+    hit_proteins = set()
+    if not os.path.exists(hmmsearch_opt):
+        return hit_proteins
+
+    with open(hmmsearch_opt) as f:
+        for line in f:
+            if line.startswith("#"):
+                continue
+            t = re.split(r"\s+", line.strip("\n"))
+            if len(t) < 5:
+                continue
+
+            # Column mapping: t[0] yields target sequence ID, t[2] holds query matrix name
+            target_name, _, query_name, _, Evalue = t[:5]
+
+            if float(Evalue) <= float(criteria):
+                hit_proteins.add(target_name)
+
+    return hit_proteins
+
+
 def load_m8_fmt_opt(m8_input, criteria=1e-5):
     """
-    Aim: parse m8 format (output from mmseqs and blastp)
-
-    Return: dict.  d[query] = [ref,evalue]
+    Parses blastp / mmseqs2 blast-style m8 (-outfmt 6) layout structures.
+    Filters by E-value and maps query sequences to their top hit reference IDs.
     """
-
     d = {}
     if os.path.exists(m8_input):
         with open(m8_input) as f:
             for line in f:
-                (
-                    query,
-                    ref,
-                    iden,
-                    length,
-                    mismatch,
-                    gap,
-                    qstart,
-                    qend,
-                    sstart,
-                    send,
-                    evalue,
-                    bit_score,
-                ) = line.split("\t")
-                if query not in d:
-                    if float(evalue) <= criteria:
-                        d[query] = [ref, evalue]
-                else:
-                    if float(evalue) < float(d[query][-1]):
+                parts = line.strip("\n").split("\t")
+                if len(parts) < 11:
+                    continue
+                query, ref, _, _, _, _, _, _, _, _, evalue = parts[:11]
+                if float(evalue) <= criteria:
+                    if query not in d or float(evalue) < float(d[query][-1]):
                         d[query] = [ref, evalue]
     return d
 
 
-def inoviruses_PI_like_gene_search(
-    inputfile,
-    prefix,
-    wd,
-    hmmdb,
-    blastdb_prefix,
-    hmm_evalue="1e-3",
-    blastp_evalue="1e-3",
-    blastp_para="-num_threads 3",
-    hmmer_para="--noali --cpu 1",
-):
+def calculate_score(mmseqOpt, scoreD, criteria=1e-5):
     """
-    Aim: search inoviruses PI like gene using hmmsearch and blastp
-
-    Return: Bool value(TRUE: contain inoviruses marker gene.)
+    Computes Naive Bayes joint conditional probabilities for lifestyles.
+    Combines log-likelihood values from homological alignments.
     """
+    p_prior_temperate, p_prior_lytic = scoreD.get("Prior_probability", [0.0, 0.0])
 
-    inovBlastpOpt = runBlastpsearch(
-        inputfile,
-        prefix,
-        wd,
-        blastdb_prefix,
-        evalue=blastp_evalue,
-        otherPara=blastp_para,
-    )
-    innoBlastD = load_m8_fmt_opt(inovBlastpOpt, blastp_evalue)
+    p_temperate = [p_prior_temperate]
+    p_lytic = [p_prior_lytic]
 
-    ## run mmseqs
-    innoHmmerOpt = runHmmsearch(inputfile, prefix, wd, hmmdb, otherPara=hmmer_para)
-    innoHmmerD = load_hmmsearch_opt(innoHmmerOpt, hmm_evalue)
-
-    if innoBlastD or innoHmmerD:
-        return True
-    else:
-        return False
-
-
-def calcaulate_score(mmseqOpt, scoreD, criteria=1e-5):
-
-    """
-    Aim: calculate P(temperate|GC1,GC2,...,GCN) and P(virulent||GC1,GC2,...,GCN) for a given mmseqOpt
-
-    Usage: calculate_score(mmseqOpt,scoreD,criteria=1e-5)
-        mmseqOpt: mmseq easy search output with our database from function runMmseqsEasysearch()
-        scoreD: the return dict from function load_scoreD()
-        criteria: just select e-value greater than criteria
-
-    Return: p_total_temperate,p_total_lytic,label
-    """
-
-
-    p_prior_temperate, p_prior_lytic = scoreD.get("Prior_probability", "NA")
-
-    p_temperate = []
-    p_lytic = []
-    p_temperate.append(p_prior_temperate)
-    p_lytic.append(p_prior_lytic)
-
-    # find the smallest e-value result for the query => return a dict
     d = load_m8_fmt_opt(mmseqOpt, criteria)
-
-    # calculate how many genes are matched
     match_gene_number = len(d)
 
-    # enumerate the dict to add the score of each lifestyle to lists
     for query, values in d.items():
         ref, evalue = values
-        p_temperate_gc, p_lytic_gc = scoreD[ref]
-        if p_temperate_gc != 0 and p_lytic_gc != 0:
-            p_temperate.append(p_temperate_gc)
-            p_lytic.append(p_lytic_gc)
+        if ref in scoreD:
+            p_temperate_gc, p_lytic_gc = scoreD[ref]
+            if float(p_temperate_gc) != 0 and float(p_lytic_gc) != 0:
+                p_temperate.append(p_temperate_gc)
+                p_lytic.append(p_lytic_gc)
 
-    # calculate P(temperate|GC1,GC2,...,GCN) and P(virulent||GC1,GC2,...,GCN)
     label = "NA"
-    p_total_temperate, p_total_lytic = 0, 0
+    p_total_temperate, p_total_lytic = 0.0, 0.0
     if len(p_temperate) == 1:
-        label = "NotEnoughInfo"
+        label = "Unclassified"
     else:
         for t, l in zip(p_temperate, p_lytic):
             p_total_temperate += float(t)
             p_total_lytic += float(l)
 
-    if p_total_temperate > p_total_lytic:
-        label = "Temperate"
-    elif p_total_temperate < p_total_lytic:
-        label = "Virulent"
-    else:
-        label = "NotEnoughInfo"
+        if p_total_temperate > p_total_lytic:
+            label = "Temperate"
+        elif p_total_temperate < p_total_lytic:
+            label = "Virulent"
+        else:
+            label = "Unclassified"
+
     return p_total_temperate, p_total_lytic, label, match_gene_number
 
 
-def chunk_list(inputlist, chunksize=10):
-    d = {}
-    n = 0
-    for i in range(0, len(inputlist), chunksize):
-        t = inputlist[i : i + chunksize]
-        d[n] = t
-        n += 1
-    return d
+def inoviruses_PI_like_gene_search(inputfile, prefix, wd, hmmdb, blastdb_prefix, hmm_evalue="1e-3",
+                                   blastp_evalue="1e-3", blastp_para="-num_threads 3", hmmer_para="--noali --cpu 1"):
+    """Detects chronic Inovirus signature sequences using single-sample profiles."""
+    inovBlastpOpt = runBlastpsearch(inputfile, prefix, wd, blastdb_prefix, evalue=blastp_evalue, otherPara=blastp_para)
+    innoBlastD = load_m8_fmt_opt(inovBlastpOpt, float(blastp_evalue))
+
+    innoHmmerOpt = runHmmsearch(inputfile, prefix, wd, hmmdb, otherPara=hmmer_para)
+    innoHmmerD = load_hmmsearch_opt(innoHmmerOpt, float(hmm_evalue))
+
+    return bool(innoBlastD or innoHmmerD)
 
 
 def check_db_md5(db_dir):
-    cmd = "cd %s/db && md5sum --check md5sum.list && cd -" % (db_dir)
-    obj = Popen(cmd, shell=True, stdout=PIPE)
+    """Validates the local database files against official MD5 checksum targets."""
+    cmd = "cd %s/db && md5sum --check md5sum.list" % (db_dir)
+    obj = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     obj.wait()
-
-    print([i.decode("utf-8") for i in obj.stdout.readlines()])
-    l = [i.decode("utf-8") for i in obj.stdout.readlines()]
-    if "FAILED" in ";".join([i.strip("\n") for i in l]):
-        print("WARNING: Please recheck the databse, database file have wrong information.")
-        sys.exit()
+    out, err = obj.communicate()
+    if b"FAILED" in out or b"FAILED" in err:
+        print(f"{_get_timestamp()} [WARNING] Database validation failure detected! Re-download recommended.")
+        sys.exit(1)
     else:
-        print("db check done!")
+        print(f"{_get_timestamp()} [INFO] Database md5 integrity checks: PASSED")
 
 
 def checkdb_and_download(scriptPos, redownload=False):
+    """Ensures reference database components are present and structurally valid."""
     if redownload:
-        mkdirs("discarded_db")
-        if os.path.exists("%s/db" % scriptPos):
-            cmd = "mv -f %s/db discarded_db " % scriptPos
+        if os.path.exists(os.path.join(scriptPos, "db")):
+            cmd = f"rm -rf {os.path.join(scriptPos, 'discarded_db')} && mv -f {os.path.join(scriptPos, 'db')} {os.path.join(scriptPos, 'discarded_db')}"
             obj = Popen(cmd, shell=True)
             obj.wait()
 
     if not os.path.exists(os.path.join(scriptPos, "db")):
-        print("db not exist! download database ...")
-        url = "https://zenodo.org/records/15781219/files/db_v0.3.2.tar.gz"
+        print(f"{_get_timestamp()} [INFO] Reference database missing. Downloading dependencies...")
+        url = DATABASE_MANIFEST["url"]
         file = os.path.split(url)[-1]
-        cmd = "wget {0} -P {1} && cd {1} && tar -zxvf {2} && rm -rf {2}".format(
-            url, scriptPos, file
-        )
-        
-        ## add error control for db download
+        cmd = "wget {0} -P {1} && cd {1} && tar -zxvf {2} && rm -rf {2}".format(url, scriptPos, file)
+
         try:
-            obj = Popen(cmd, shell=True, stdout=PIPE)
+            obj = Popen(cmd, shell=True)
             obj.wait()
-
             check_db_md5(scriptPos)
-        except:
-            print("db download error!! Please RERUN with -d")
-            sys.exit()
-        else:
-            print("db download done!")
-
+        except Exception as e:
+            print(f"{_get_timestamp()} [CRITICAL] Database setup failed: {str(e)}. Rerun with -d.")
+            sys.exit(1)
     else:
-        print("db exist!")
+        print(f"{_get_timestamp()} [INFO] Database verified.")
 
 
-def bayes_classifier_single(
-    inputfile,
-    prefix,
-    wd,
-    hmm_criteria=1e-5,
-    mmseqs_criteria=1e-5,
-    blastp_criteria=1e-3,
-    blastp_para="-num_threads 3",
-    hmmer_para="--noali --cpu 3",
-    mmseqs_para="-s 7 --max-seqs 1 --alignment-mode 3 --alignment-output-mode 0 --min-aln-len 40  --cov-mode 0 --greedy-best-hits 1 --threads 3",
-):
+def bayes_classifier_single(inputfile, prefix, wd, hmm_criteria=1e-5, mmseqs_criteria=1e-5, blastp_criteria=1e-3,
+                            blastp_para="-num_threads 3", hmmer_para="--noali --cpu 3",
+                            mmseqs_para="-s 7 --max-seqs 1 --alignment-mode 3 --alignment-output-mode 0 --min-aln-len 40 --cov-mode 0 --greedy-best-hits 1 --threads 3"):
     """
-    Aim: single predict lifestyle
-
-    Process: have 3 phase
-        phase 1: align to the integrase and excisionase(16 pfam id in total) -- hmmer
-        phase 2: align to our protein database -- mmseqs easy-search
-        phase 3: dected innovirues -- hmmer and blastp
-        if temperate appear in either one phase --> final will be temperate
-
-    Usage: bayes_classifier_single(inputfile,prefix,wd,hmm_criteria=1e-5,mmseqs_criteria=1e-5)
-        inputfile: protein set from a bin|a genome.
-        prefix: sample identifier, will be used as a prefix to the output.
-        wd: work path where put the result
-        hmm_criteria: criteria to filter pfam evalue greater than x (default: 1e-5)
-        mmseqs_criteria: criteria to filter mmseqs evalue greater than x (default: 1e-5)
-        blastp_criteria: criteria to filter blastp evalue greater than x (default: 1e-5)
-
-    Return:[prefix,inte_label,excision_label,pfam_label,p_total_temperate,p_total_lytic,bc_label,final_label]
+    Processes single-sample lifestyle predictions.
+    Retained to support alternative processing workflows.
     """
-    print("## %s start!" % prefix)
     mkdirs(wd)
-    pfam_label, bc_label, final_label = "Virulent", "Virulent", "Virulent"
+    pfam_label, bc_label, final_label = "Unclassified", "Unclassified", "Unclassified"
     fileDir = os.path.dirname(os.path.abspath(__file__))
 
-    # phase 1 hmmsearch for pfam
     integrase_hmm = os.path.join(fileDir, "db/integrase_pfv34.hmm")
     excisionase_hmm = os.path.join(fileDir, "db/excisionase_pfv34.hmm")
 
-    # run hmmsearch for integrease and excisionase
     pfam_wd = os.path.join(wd, "BC_pfam")
-    mkdirs(pfam_wd)
-    inte_opt = runHmmsearch(
-        inputfile, "%s.BC_integrase" % prefix, pfam_wd, integrase_hmm, hmmer_para
-    )
-    excision_opt = runHmmsearch(
-        inputfile, "%s.BC_excisionase" % prefix, pfam_wd, excisionase_hmm, hmmer_para
-    )
+    inte_opt = runHmmsearch(inputfile, f"{prefix}.BC_integrase", pfam_wd, integrase_hmm, hmmer_para)
+    excision_opt = runHmmsearch(inputfile, f"{prefix}.BC_excisionase", pfam_wd, excisionase_hmm, hmmer_para)
 
-    # load pfam result
-    inte_label, excision_label = [0, 0]
     inte_annoD = load_hmmsearch_opt(inte_opt, criteria=hmm_criteria)
     excision_annoD = load_hmmsearch_opt(excision_opt, criteria=hmm_criteria)
 
-    if inte_annoD:
-        inte_label = len(inte_annoD)
-    if excision_annoD:
-        excision_label = len(excision_annoD)
+    inte_label = len(inte_annoD) if inte_annoD else 0
+    excision_label = len(excision_annoD) if excision_annoD else 0
 
     if inte_label or excision_label:
         pfam_label = "Temperate"
 
-    # phase 2 bayes classifier
-    # run mmseqs search
-    print("Using prokaryote only protein v04_2025 as DB")
-    bc_mmseqsDB = os.path.join(
-            fileDir, "db/bayes_mmseqs_index/training_prot_04_2025"
-    )
-
+    bc_mmseqsDB = os.path.join(fileDir, "db/bayes_mmseqs_index/training_prot_04_2025")
     mmseqs_wd = os.path.join(wd, "BC_mmseqs")
-    mmseqs_prefix = "%s.BC_mmseqs" % prefix
-    mmseq_opt = runMmseqsEasysearch(
-        inputfile, mmseqs_prefix, mmseqs_wd, bc_mmseqsDB, otherPara=mmseqs_para
-    )
+    mmseq_opt = runMmseqsEasysearch(inputfile, f"{prefix}.BC_mmseqs", mmseqs_wd, bc_mmseqsDB, otherPara=mmseqs_para)
 
-
-    # load score file
-    score_file = os.path.join(
-            fileDir, "db/prokaryote_only_training_cluster_04_2025.stat.scoreOpt.tsv"
-    )
-
+    score_file = os.path.join(fileDir, "db/prokaryote_only_training_cluster_04_2025.stat.scoreOpt.tsv")
     member2scoreD = load_scoreD(score_file)
 
-    # read mmseqs easy search file
-    p_total_temperate, p_total_lytic, bc_label, match_gene_number = calcaulate_score(
-        mmseq_opt, member2scoreD, criteria=mmseqs_criteria
-    )
-    print(
-        prefix,
-        inte_label,
-        excision_label,
-        pfam_label,
-        p_total_temperate,
-        p_total_lytic,
-        bc_label,
-    )
+    p_total_temperate, p_total_lytic, bc_label, match_gene_number = calculate_score(mmseq_opt, member2scoreD,
+                                                                                    criteria=mmseqs_criteria)
 
-    # phase 2B combine result pfam and bayes classifier
     if pfam_label == "Temperate" or bc_label == "Temperate":
         final_label = "Temperate"
 
-    # phase 3: detect Innovirues
-    # way1: based on marker gene
     inno_hmmDB = os.path.join(fileDir, "db/Final_marker_morph.hmm")
     inno_blastPre = os.path.join(fileDir, "db/Marker_ALV1")
     inno_dect_wd = os.path.join(wd, "BC_Inno")
-    inno_prefix = "%s.Inno" % prefix
 
-    ### in this 1e-3 is used to identify the PI-like
     inno_res = inoviruses_PI_like_gene_search(
-        inputfile,
-        inno_prefix,
-        inno_dect_wd,
-        inno_hmmDB,
-        inno_blastPre,
-        hmm_evalue=blastp_criteria,
-        blastp_evalue=blastp_criteria,
-        blastp_para=blastp_para,
-        hmmer_para=hmmer_para,
+        inputfile, f"{prefix}.Inno", inno_dect_wd, inno_hmmDB, inno_blastPre,
+        hmm_evalue=blastp_criteria, blastp_evalue=blastp_criteria, blastp_para=blastp_para, hmmer_para=hmmer_para
     )
-    if inno_res == True:
+    if inno_res:
         final_label = "Chronic"
-    print("## %s end!" % prefix)
-    return [
-        prefix,
-        inte_label,
-        excision_label,
-        pfam_label,
-        p_total_temperate,
-        p_total_lytic,
-        bc_label,
-        final_label,
-        match_gene_number,
-    ]
+
+    return [prefix, inte_label, excision_label, pfam_label, p_total_temperate, p_total_lytic, bc_label, final_label,
+            match_gene_number]
 
 
 if __name__ == "__main__":
