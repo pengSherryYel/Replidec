@@ -1,0 +1,334 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch or commit to validate during a dry run
+        required: true
+        default: main
+        type: string
+      tag:
+        description: Expected release tag in vX.Y.Z format
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate release metadata
+    runs-on: ubuntu-latest
+    outputs:
+      checkout-ref: ${{ steps.mode.outputs.checkout-ref }}
+      publish: ${{ steps.mode.outputs.publish }}
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Resolve release mode
+        id: mode
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUSH_TAG: ${{ github.ref_name }}
+          INPUT_REF: ${{ inputs.ref }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${EVENT_NAME}" == "push" ]]; then
+            tag="${PUSH_TAG}"
+            checkout_ref="${PUSH_TAG}"
+            publish="true"
+          else
+            tag="${INPUT_TAG}"
+            checkout_ref="${INPUT_REF}"
+            publish="false"
+          fi
+
+          echo "checkout-ref=${checkout_ref}" >> "${GITHUB_OUTPUT}"
+          echo "publish=${publish}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check out the release candidate
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ steps.mode.outputs.checkout-ref }}
+          fetch-depth: 0
+
+      - name: Validate tag and project version
+        id: version
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.mode.outputs.tag }}
+          PUBLISH: ${{ steps.mode.outputs.publish }}
+        run: |
+          set -euo pipefail
+          python scripts/check_release_version.py \
+            --tag "${RELEASE_TAG}" \
+            --github-output "${GITHUB_OUTPUT}"
+
+          if [[ "${PUBLISH}" == "true" ]]; then
+            tag_commit="$(git rev-list -n 1 "refs/tags/${RELEASE_TAG}")"
+            checkout_commit="$(git rev-parse HEAD)"
+            if [[ "${tag_commit}" != "${checkout_commit}" ]]; then
+              echo "Release tag ${RELEASE_TAG} does not point to the checked-out commit" >&2
+              exit 1
+            fi
+
+            git fetch --no-tags origin main:refs/remotes/origin/main
+            if ! git merge-base --is-ancestor "${tag_commit}" origin/main; then
+              echo "Release tag ${RELEASE_TAG} does not point to a commit in main" >&2
+              exit 1
+            fi
+          fi
+
+  test:
+    name: Test release candidate
+    needs: validate
+    uses: ./.github/workflows/test.yml
+    with:
+      ref: ${{ needs.validate.outputs.checkout-ref }}
+    permissions:
+      contents: read
+
+  build:
+    name: Build and verify Python distributions
+    needs:
+      - validate
+      - test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the tested release candidate
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ needs.validate.outputs.checkout-ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Build sdist and wheel
+        env:
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade build twine
+          python -m build
+          python -m twine check dist/*
+
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          version = os.environ["RELEASE_VERSION"]
+          files = [path.name.lower() for path in Path("dist").iterdir()]
+          expected = f"replidec-{version}"
+          if len(files) != 2 or not all(expected in filename for filename in files):
+              raise SystemExit(f"Unexpected distribution files: {files}")
+          print("Verified distribution files:", *files)
+          PY
+
+      - name: Install and smoke-test the wheel
+        run: |
+          set -euo pipefail
+          python -m pip install --force-reinstall dist/*.whl
+          Replidec --version
+          replidec --help >/dev/null
+
+      - name: Upload immutable Python distributions
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: python-dist-${{ needs.validate.outputs.version }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish_pypi:
+    name: Publish to PyPI
+    if: needs.validate.outputs.publish == 'true'
+    needs:
+      - validate
+      - build
+      - bioconda_preflight
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/replidec
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download tested distributions
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: python-dist-${{ needs.validate.outputs.version }}
+          path: dist
+
+      - name: Publish distributions with PyPI Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
+        with:
+          packages-dir: dist/
+
+  bioconda_preflight:
+    name: Check Bioconda PR access
+    if: needs.validate.outputs.publish == 'true'
+    needs:
+      - validate
+      - test
+    runs-on: ubuntu-latest
+    environment:
+      name: bioconda
+      url: https://github.com/bioconda/bioconda-recipes/pulls
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ secrets.BIOCONDA_PR_TOKEN }}
+      FORK_OWNER: ${{ vars.BIOCONDA_FORK_OWNER || github.repository_owner }}
+    steps:
+      - name: Verify token and fork access before publishing
+        run: |
+          set -euo pipefail
+          if [[ -z "${GH_TOKEN}" ]]; then
+            echo "BIOCONDA_PR_TOKEN is not configured in the bioconda environment." >&2
+            exit 1
+          fi
+          gh auth status
+          gh repo view "${FORK_OWNER}/bioconda-recipes" >/dev/null
+
+  github_release:
+    name: Create GitHub Release
+    if: needs.validate.outputs.publish == 'true'
+    needs:
+      - validate
+      - build
+      - publish_pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download tested distributions
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: python-dist-${{ needs.validate.outputs.version }}
+          path: dist
+
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release upload "${RELEASE_TAG}" dist/* --clobber
+          else
+            gh release create "${RELEASE_TAG}" dist/* \
+              --verify-tag \
+              --generate-notes \
+              --title "RepliDec ${RELEASE_VERSION}"
+          fi
+
+  bioconda_pr:
+    name: Open Bioconda recipe PR
+    if: needs.validate.outputs.publish == 'true'
+    needs:
+      - validate
+      - github_release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: bioconda
+      url: https://github.com/bioconda/bioconda-recipes/pulls
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ secrets.BIOCONDA_PR_TOKEN }}
+      FORK_OWNER: ${{ vars.BIOCONDA_FORK_OWNER || github.repository_owner }}
+      RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+    steps:
+      - name: Check out release automation
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ needs.validate.outputs.checkout-ref }}
+
+      - name: Download the published PyPI sdist and compute its checksum
+        id: sdist
+        run: |
+          set -euo pipefail
+          sdist="${RUNNER_TEMP}/replidec-${RELEASE_VERSION}.tar.gz"
+          url="https://pypi.org/packages/source/r/replidec/replidec-${RELEASE_VERSION}.tar.gz"
+          curl --fail --location \
+            --retry 12 \
+            --retry-delay 10 \
+            --retry-all-errors \
+            --output "${sdist}" \
+            "${url}"
+          sha256="$(sha256sum "${sdist}" | cut -d ' ' -f 1)"
+          echo "sha256=${sha256}" >> "${GITHUB_OUTPUT}"
+
+      - name: Update the official Bioconda recipe
+        env:
+          SDIST_SHA256: ${{ steps.sdist.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          fork="${FORK_OWNER}/bioconda-recipes"
+          branch="replidec-${RELEASE_VERSION}"
+          checkout="${RUNNER_TEMP}/bioconda-recipes"
+
+          if ! gh repo view "${fork}" >/dev/null 2>&1; then
+            echo "Missing ${fork}. Create a fork of bioconda/bioconda-recipes before publishing." >&2
+            exit 1
+          fi
+
+          gh repo clone "${fork}" "${checkout}" -- --filter=blob:none
+          cd "${checkout}"
+          git remote add upstream https://github.com/bioconda/bioconda-recipes.git
+          git fetch upstream master
+          git checkout -B "${branch}" upstream/master
+
+          python "${GITHUB_WORKSPACE}/scripts/update_bioconda_recipe.py" \
+            --recipe recipes/replidec/meta.yaml \
+            --version "${RELEASE_VERSION}" \
+            --sha256 "${SDIST_SHA256}"
+
+          if git diff --quiet -- recipes/replidec/meta.yaml; then
+            echo "Bioconda recipe is already up to date for ${RELEASE_VERSION}." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          git config user.name "RepliDec release bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add recipes/replidec/meta.yaml
+          git commit -m "Update replidec to ${RELEASE_VERSION}"
+          git push --force origin "${branch}"
+
+          pr_url="$(gh pr list \
+            --repo bioconda/bioconda-recipes \
+            --head "${FORK_OWNER}:${branch}" \
+            --state open \
+            --json url \
+            --jq '.[0].url // empty')"
+
+          if [[ -z "${pr_url}" ]]; then
+            pr_url="$(gh pr create \
+              --repo bioconda/bioconda-recipes \
+              --base master \
+              --head "${FORK_OWNER}:${branch}" \
+              --title "Update replidec to ${RELEASE_VERSION}" \
+              --body "Automated recipe update for [RepliDec ${RELEASE_VERSION}](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}). The source checksum was calculated from the published PyPI sdist.")"
+          fi
+
+          echo "Bioconda PR: ${pr_url}" >> "${GITHUB_STEP_SUMMARY}"
