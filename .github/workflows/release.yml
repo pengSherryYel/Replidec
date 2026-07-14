@@ -225,7 +225,34 @@ jobs:
             exit 1
           fi
 
-          echo "BIOCONDA_PR_TOKEN (${token_owner}) can push to ${fork}." >> "${GITHUB_STEP_SUMMARY}"
+          probe_branch="replidec-preflight-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-missing"
+          if gh api "repos/${fork}/git/ref/heads/${probe_branch}" >/dev/null 2>&1; then
+            echo "Refusing to use existing permission-probe branch ${probe_branch}." >&2
+            exit 1
+          fi
+
+          set +e
+          probe_output="$(gh api \
+            --include \
+            --method POST \
+            repos/bioconda/bioconda-recipes/pulls \
+            -f title="RepliDec release permission probe" \
+            -f head="${FORK_OWNER}:${probe_branch}" \
+            -f base=master \
+            2>&1)"
+          probe_exit=$?
+          set -e
+
+          if [[ ${probe_exit} -eq 0 ]] || ! grep -Eq '^HTTP/[^ ]+ 422 ' <<< "${probe_output}"; then
+            echo "BIOCONDA_PR_TOKEN (${token_owner}) cannot create pull requests in bioconda/bioconda-recipes." >&2
+            printf '%s\n' "${probe_output}" >&2
+            exit 1
+          fi
+
+          {
+            echo "BIOCONDA_PR_TOKEN (${token_owner}) can push to ${fork}."
+            echo "The token can also reach the upstream pull-request creation endpoint."
+          } >> "${GITHUB_STEP_SUMMARY}"
 
   github_release:
     name: Create GitHub Release
