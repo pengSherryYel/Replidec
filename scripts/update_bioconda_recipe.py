@@ -13,12 +13,28 @@ SHA256_PATTERN = re.compile(r"(^\s*sha256:\s*)[0-9a-fA-F]+\s*$", re.MULTILINE)
 BUILD_PATTERN = re.compile(r"(^\s*number:\s*)[0-9]+\s*$", re.MULTILINE)
 SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[a-zA-Z0-9.-]+)?$")
 SHA_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+UPPER_ENTRY_POINT_PATTERN = re.compile(
+    r"^(?P<indent>[ \t]*)-[ \t]+Replidec[ \t]*=[ \t]*Replidec\.Replidec_cmdline:main[ \t]*$",
+    re.MULTILINE,
+)
+LOWER_ENTRY_POINT_PATTERN = re.compile(
+    r"^[ \t]*-[ \t]+replidec[ \t]*=[ \t]*Replidec\.Replidec_cmdline:main[ \t]*$",
+    re.MULTILINE,
+)
 HELP_COMMAND_PATTERN = re.compile(
     r"^(?P<indent>[ \t]*)-[ \t]+Replidec[ \t]+--help[ \t]*$",
     re.MULTILINE,
 )
 VERSION_COMMAND_PATTERN = re.compile(
-    r"^[ \t]*-[ \t]+Replidec[ \t]+--version[ \t]*$",
+    r"^(?P<indent>[ \t]*)-[ \t]+Replidec[ \t]+--version[ \t]*$",
+    re.MULTILINE,
+)
+LOWER_HELP_COMMAND_PATTERN = re.compile(
+    r"^(?P<indent>[ \t]*)-[ \t]+replidec[ \t]+--help[ \t]*$",
+    re.MULTILINE,
+)
+LOWER_VERSION_COMMAND_PATTERN = re.compile(
+    r"^[ \t]*-[ \t]+replidec[ \t]+--version[ \t]*$",
     re.MULTILINE,
 )
 
@@ -28,6 +44,24 @@ def _replace_once(pattern: re.Pattern[str], replacement: str, text: str, label: 
     if count != 1:
         raise ValueError(f"Expected exactly one {label} field, found {count}")
     return updated
+
+
+def _insert_line_after(
+    text: str,
+    anchor_pattern: re.Pattern[str],
+    existing_pattern: re.Pattern[str],
+    line: str,
+    section: str,
+) -> str:
+    if existing_pattern.search(text) is not None:
+        return text
+
+    anchor = anchor_pattern.search(text)
+    if anchor is None:
+        raise ValueError(f"Unable to locate the Bioconda {section} section")
+
+    inserted = f"{anchor.group('indent')}- {line}"
+    return text[: anchor.end()] + f"\n{inserted}" + text[anchor.end() :]
 
 
 def update_recipe_text(text: str, version: str, sha256: str) -> str:
@@ -59,16 +93,34 @@ def update_recipe_text(text: str, version: str, sha256: str) -> str:
     # RepliDec now uses vX.Y.Z tags; older recipes linked to v.X.Y.Z.
     updated = updated.replace("/blob/v.{{ version }}/", "/blob/v{{ version }}/")
 
-    if VERSION_COMMAND_PATTERN.search(updated) is None:
-        help_command = HELP_COMMAND_PATTERN.search(updated)
-        if help_command is None:
-            raise ValueError("Unable to locate the Bioconda command test section")
-        version_command = f"{help_command.group('indent')}- Replidec --version"
-        updated = (
-            updated[: help_command.end()]
-            + f"\n{version_command}"
-            + updated[help_command.end() :]
-        )
+    updated = _insert_line_after(
+        updated,
+        UPPER_ENTRY_POINT_PATTERN,
+        LOWER_ENTRY_POINT_PATTERN,
+        "replidec = Replidec.Replidec_cmdline:main",
+        "entry_points",
+    )
+    updated = _insert_line_after(
+        updated,
+        HELP_COMMAND_PATTERN,
+        VERSION_COMMAND_PATTERN,
+        "Replidec --version",
+        "command test",
+    )
+    updated = _insert_line_after(
+        updated,
+        VERSION_COMMAND_PATTERN,
+        LOWER_HELP_COMMAND_PATTERN,
+        "replidec --help",
+        "command test",
+    )
+    updated = _insert_line_after(
+        updated,
+        LOWER_HELP_COMMAND_PATTERN,
+        LOWER_VERSION_COMMAND_PATTERN,
+        "replidec --version",
+        "command test",
+    )
 
     return updated
 

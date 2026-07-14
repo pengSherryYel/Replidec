@@ -182,6 +182,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
         with:
           packages-dir: dist/
+          skip-existing: true
 
   bioconda_preflight:
     name: Check Bioconda PR access
@@ -345,12 +346,14 @@ jobs:
             --jq '.[0].html_url // empty')"
 
           if [[ -z "${pr_url}" ]]; then
-            pr_url="$(gh pr create \
-              --repo bioconda/bioconda-recipes \
-              --base master \
-              --head "${FORK_OWNER}:${branch}" \
-              --title "Update replidec to ${RELEASE_VERSION}" \
-              --body "Automated recipe update for [RepliDec ${RELEASE_VERSION}](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}). The source checksum was calculated from the published PyPI sdist.")"
+            pr_url="$(gh api \
+              --method POST \
+              repos/bioconda/bioconda-recipes/pulls \
+              -f base=master \
+              -f head="${FORK_OWNER}:${branch}" \
+              -f title="Update replidec to ${RELEASE_VERSION}" \
+              -f body="Automated recipe update for [RepliDec ${RELEASE_VERSION}](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}). The source checksum was calculated from the published PyPI sdist." \
+              --jq '.html_url')"
           fi
 
           echo "Bioconda PR: ${pr_url}" >> "${GITHUB_STEP_SUMMARY}"
