@@ -29,7 +29,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       checkout-ref: ${{ steps.mode.outputs.checkout-ref }}
-      publish: ${{ steps.mode.outputs.publish }}
       tag: ${{ steps.version.outputs.tag }}
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -47,16 +46,19 @@ jobs:
           if [[ "${EVENT_NAME}" == "push" ]]; then
             tag="${PUSH_TAG}"
             checkout_ref="${PUSH_TAG}"
-            publish="true"
           else
             tag="${INPUT_TAG}"
             checkout_ref="${INPUT_REF}"
-            publish="false"
           fi
 
-          echo "checkout-ref=${checkout_ref}" >> "${GITHUB_OUTPUT}"
-          echo "publish=${publish}" >> "${GITHUB_OUTPUT}"
-          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          if [[ "${tag}" == *$'\n'* || "${tag}" == *$'\r'* ||
+                "${checkout_ref}" == *$'\n'* || "${checkout_ref}" == *$'\r'* ]]; then
+            echo "Release tag and checkout ref must each be a single line." >&2
+            exit 1
+          fi
+
+          printf 'checkout-ref=%s\n' "${checkout_ref}" >> "${GITHUB_OUTPUT}"
+          printf 'tag=%s\n' "${tag}" >> "${GITHUB_OUTPUT}"
 
       - name: Check out the release candidate
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -69,7 +71,7 @@ jobs:
         shell: bash
         env:
           RELEASE_TAG: ${{ steps.mode.outputs.tag }}
-          PUBLISH: ${{ steps.mode.outputs.publish }}
+          PUBLISH: ${{ github.event_name == 'push' }}
         run: |
           set -euo pipefail
           python scripts/check_release_version.py \
@@ -157,7 +159,7 @@ jobs:
 
   publish_pypi:
     name: Publish to PyPI
-    if: needs.validate.outputs.publish == 'true'
+    if: github.event_name == 'push'
     needs:
       - validate
       - build
@@ -183,7 +185,7 @@ jobs:
 
   bioconda_preflight:
     name: Check Bioconda PR access
-    if: needs.validate.outputs.publish == 'true'
+    if: github.event_name == 'push'
     needs:
       - validate
       - test
@@ -209,7 +211,7 @@ jobs:
 
   github_release:
     name: Create GitHub Release
-    if: needs.validate.outputs.publish == 'true'
+    if: github.event_name == 'push'
     needs:
       - validate
       - build
@@ -227,6 +229,7 @@ jobs:
       - name: Create or update the release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
         run: |
@@ -242,7 +245,7 @@ jobs:
 
   bioconda_pr:
     name: Open Bioconda recipe PR
-    if: needs.validate.outputs.publish == 'true'
+    if: github.event_name == 'push'
     needs:
       - validate
       - github_release

@@ -13,6 +13,14 @@ SHA256_PATTERN = re.compile(r"(^\s*sha256:\s*)[0-9a-fA-F]+\s*$", re.MULTILINE)
 BUILD_PATTERN = re.compile(r"(^\s*number:\s*)[0-9]+\s*$", re.MULTILINE)
 SEMVER_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[a-zA-Z0-9.-]+)?$")
 SHA_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+HELP_COMMAND_PATTERN = re.compile(
+    r"^(?P<indent>[ \t]*)-[ \t]+Replidec[ \t]+--help[ \t]*$",
+    re.MULTILINE,
+)
+VERSION_COMMAND_PATTERN = re.compile(
+    r"^[ \t]*-[ \t]+Replidec[ \t]+--version[ \t]*$",
+    re.MULTILINE,
+)
 
 
 def _replace_once(pattern: re.Pattern[str], replacement: str, text: str, label: str) -> str:
@@ -51,14 +59,15 @@ def update_recipe_text(text: str, version: str, sha256: str) -> str:
     # RepliDec now uses vX.Y.Z tags; older recipes linked to v.X.Y.Z.
     updated = updated.replace("/blob/v.{{ version }}/", "/blob/v{{ version }}/")
 
-    if "    - Replidec --version" not in updated:
-        help_command = "    - Replidec --help"
-        if help_command not in updated:
+    if VERSION_COMMAND_PATTERN.search(updated) is None:
+        help_command = HELP_COMMAND_PATTERN.search(updated)
+        if help_command is None:
             raise ValueError("Unable to locate the Bioconda command test section")
-        updated = updated.replace(
-            help_command,
-            f"{help_command}\n    - Replidec --version",
-            1,
+        version_command = f"{help_command.group('indent')}- Replidec --version"
+        updated = (
+            updated[: help_command.end()]
+            + f"\n{version_command}"
+            + updated[help_command.end() :]
         )
 
     return updated

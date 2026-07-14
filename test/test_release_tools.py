@@ -53,6 +53,20 @@ class BiocondaRecipeTests(unittest.TestCase):
         self.assertIn("    - Replidec --version", updated)
         self.assertIn("/blob/v{{ version }}/README.md", updated)
 
+    def test_recipe_update_preserves_command_indentation(self):
+        sha256 = "b" * 64
+
+        for indent in (" ", "    ", "\t"):
+            with self.subTest(indent=repr(indent)):
+                recipe = SAMPLE_RECIPE.replace(
+                    "    - Replidec --help",
+                    f"{indent}- Replidec --help",
+                )
+                updated = update_recipe_text(recipe, "0.3.6", sha256)
+
+                self.assertIn(f"{indent}- Replidec --help", updated)
+                self.assertIn(f"{indent}- Replidec --version", updated)
+
     def test_invalid_sha_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "SHA256"):
             update_recipe_text(SAMPLE_RECIPE, "0.3.6", "not-a-sha")
