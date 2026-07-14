@@ -122,24 +122,23 @@ jobs:
             cd "${DATABASE_DIR}" && md5sum --check --quiet md5sum.list
           ); then
             echo "Using the cached reference database."
-            exit 0
+          else
+            rm -rf "${DATABASE_DIR}"
+            archive="${RUNNER_TEMP}/replidec-database.tar.gz"
+            curl --fail --location \
+              --retry 5 \
+              --retry-delay 10 \
+              --retry-all-errors \
+              --silent \
+              --show-error \
+              --output "${archive}" \
+              "${DATABASE_URL}"
+            tar -xzf "${archive}" -C "$(dirname "${DATABASE_DIR}")"
+            (
+              cd "${DATABASE_DIR}"
+              md5sum --check --quiet md5sum.list
+            )
           fi
-
-          rm -rf "${DATABASE_DIR}"
-          archive="${RUNNER_TEMP}/replidec-database.tar.gz"
-          curl --fail --location \
-            --retry 5 \
-            --retry-delay 10 \
-            --retry-all-errors \
-            --silent \
-            --show-error \
-            --output "${archive}" \
-            "${DATABASE_URL}"
-          tar -xzf "${archive}" -C "$(dirname "${DATABASE_DIR}")"
-          (
-            cd "${DATABASE_DIR}"
-            md5sum --check --quiet md5sum.list
-          )
 
       - name: Run release helper tests
         run: python -m unittest discover -s test -p 'test_*.py' -v
