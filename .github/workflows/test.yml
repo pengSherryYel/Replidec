@@ -81,26 +81,36 @@ jobs:
         run: |
           python -m pip install --no-deps --upgrade --force-reinstall .
 
-          PACKAGE_DIR="$(python -c 'from pathlib import Path; import Replidec; print(Path(Replidec.__file__).resolve().parent)')"
-          echo "package-dir=${PACKAGE_DIR}" >> "${GITHUB_OUTPUT}"
-          echo "database-version=$(python -c 'from Replidec.Replidec import DATABASE_MANIFEST; print(DATABASE_MANIFEST["version"])')" >> "${GITHUB_OUTPUT}"
-          echo "database-url=$(python -c 'from Replidec.Replidec import DATABASE_MANIFEST; print(DATABASE_MANIFEST["url"])')" >> "${GITHUB_OUTPUT}"
-
-          python - <<'PY'
+          (
+            cd "${RUNNER_TEMP}"
+            python - <<'PY'
+          import os
           import re
           from pathlib import Path
-          import Replidec
 
-          source = Path("Replidec/__init__.py").read_text(encoding="utf-8")
+          import Replidec
+          from Replidec.Replidec import DATABASE_MANIFEST
+
+          workspace = Path(os.environ["GITHUB_WORKSPACE"]).resolve()
+          source = (workspace / "Replidec/__init__.py").read_text(encoding="utf-8")
           expected = re.search(r'^__version__\s*=\s*["\x27]([^"\x27]+)["\x27]', source, re.MULTILINE)
           assert expected is not None, "Unable to read the candidate version"
 
           package_path = Path(Replidec.__file__).resolve()
           print(f"Testing RepliDec {Replidec.__version__} from {package_path}")
+          assert workspace not in package_path.parents, (
+              "Candidate import resolved to the checkout instead of the installed package"
+          )
           assert Replidec.__version__ == expected.group(1), (
               "Candidate code did not replace the published Bioconda package"
           )
+
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"package-dir={package_path.parent}\n")
+              output.write(f"database-version={DATABASE_MANIFEST['version']}\n")
+              output.write(f"database-url={DATABASE_MANIFEST['url']}\n")
           PY
+          )
 
           Replidec --version
           replidec --version

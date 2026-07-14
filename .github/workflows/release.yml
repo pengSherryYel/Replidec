@@ -206,8 +206,25 @@ jobs:
             echo "BIOCONDA_PR_TOKEN is not configured in the bioconda environment." >&2
             exit 1
           fi
+
           gh auth status
-          gh repo view "${FORK_OWNER}/bioconda-recipes" >/dev/null
+          token_owner="$(gh api user --jq '.login')"
+          fork="${FORK_OWNER}/bioconda-recipes"
+          fork_access="$(gh api "repos/${fork}" \
+            --jq '[(.permissions.push // false), (.fork // false), (.parent.full_name // "")] | @tsv')"
+          IFS=$'\t' read -r can_push is_fork parent_repo <<< "${fork_access}"
+
+          if [[ "${is_fork}" != "true" || "${parent_repo}" != "bioconda/bioconda-recipes" ]]; then
+            echo "${fork} is not a fork of bioconda/bioconda-recipes." >&2
+            exit 1
+          fi
+
+          if [[ "${can_push}" != "true" ]]; then
+            echo "BIOCONDA_PR_TOKEN (${token_owner}) does not have push access to ${fork}." >&2
+            exit 1
+          fi
+
+          echo "BIOCONDA_PR_TOKEN (${token_owner}) can push to ${fork}." >> "${GITHUB_STEP_SUMMARY}"
 
   github_release:
     name: Create GitHub Release
@@ -296,7 +313,8 @@ jobs:
             exit 1
           fi
 
-          gh repo clone "${fork}" "${checkout}" -- --filter=blob:none
+          gh auth setup-git
+          git clone --filter=blob:none "https://github.com/${fork}.git" "${checkout}"
           cd "${checkout}"
           git remote add upstream https://github.com/bioconda/bioconda-recipes.git
           git fetch upstream master
@@ -318,12 +336,13 @@ jobs:
           git commit -m "Update replidec to ${RELEASE_VERSION}"
           git push --force origin "${branch}"
 
-          pr_url="$(gh pr list \
-            --repo bioconda/bioconda-recipes \
-            --head "${FORK_OWNER}:${branch}" \
-            --state open \
-            --json url \
-            --jq '.[0].url // empty')"
+          pr_url="$(gh api \
+            --method GET \
+            repos/bioconda/bioconda-recipes/pulls \
+            -f state=open \
+            -f base=master \
+            -f head="${FORK_OWNER}:${branch}" \
+            --jq '.[0].html_url // empty')"
 
           if [[ -z "${pr_url}" ]]; then
             pr_url="$(gh pr create \
