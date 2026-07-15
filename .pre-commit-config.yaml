@@ -1,0 +1,11 @@
+# One-time setup:
+#   python -m pip install -r requirements-dev.txt
+#   pre-commit install --hook-type pre-push
+repos:
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.3.0
+    hooks:
+      - id: flake8
+        name: Flake8
+        stages:
+          - pre-push

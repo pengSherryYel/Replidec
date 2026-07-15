@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from Replidec.Replidec_multi import bayes_classifier_batch, bayes_classifier_contig, bayes_classifier_genomes
 from Replidec.Replidec import checkdb_and_download
+from Replidec import __version__
 
 def main():
     """Main execution entry point parsing user flags and routing calls."""
@@ -19,7 +20,7 @@ def main():
         description="Replidec: Replication cycle prediction tool for prokaryotic viruses",
         formatter_class=RawTextHelpFormatter
     )
-    parser.add_argument("-v", "--version", action='version', version='Replidec v0.3.6')
+    parser.add_argument("-v", "--version", action='version', version=f'Replidec v{__version__}')
 
     # Fixes an earlier issue by enabling required=False so that database maintenance runs freely without an input file
     parser.add_argument("-p", "--program", default='multi_fasta', required=False,

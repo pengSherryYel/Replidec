@@ -1,11 +1,12 @@
 #include CONTRIBUTING.rst
 #include HISTORY.rst
 include LICENSE
-include README.rst
+include README.md
 
 graft test
 #prune Replidec/__pycache__
 recursive-exclude Replidec *.py[co]
+global-exclude *.py[co]
 prune Replidec/db
 
 
