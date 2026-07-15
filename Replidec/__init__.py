@@ -15,5 +15,4 @@ The package consists of the following Python modules:
 
 __author__ = """Xue Peng, Torben Sanders, Erfan Khamespanah"""
 __email__ = 'xue.peng@helmholtz-muenchen.de'
-__version__ = '0.3.4'
-from Replidec import *
+__version__ = '0.3.5'

@@ -1,7 +1,8 @@
 build/
 Replidec.egg-info/
 dist/
+__pycache__/
+*.py[cod]
 sectest/
 .idea
 Replidec/db/
-Replidec/__pycache__/
