@@ -14,11 +14,29 @@ Formal version tags and production package releases are created from `main`
 only. There is no fixed weekly release day: open a `develop` to `main` pull
 request when the accumulated changes form a coherent release candidate.
 
+## Activating the workflow
+
+The repository owner initializes `develop` once, after the CI/release guardrails
+and this workflow documentation have both been reviewed and merged into `main`:
+
+```bash
+git switch main
+git pull --ff-only origin main
+git switch --create develop
+git push --set-upstream origin develop
+```
+
+Create `develop` from the current reviewed `main`, not from an unmerged pull
+request branch. Until `origin/develop` exists, contributors should continue to
+use focused pull-request branches targeting `main`; the day-to-day workflow
+below becomes active after the owner completes this one-time initialization.
+
 ## Day-to-day development
 
 1. Start from the current shared branch:
 
    ```bash
+   git fetch origin
    git switch develop
    git pull --ff-only origin develop
    ```
