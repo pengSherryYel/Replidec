@@ -297,8 +297,8 @@ def bayes_classifier_single(inputfile, prefix, wd, hmm_criteria=1e-5, mmseqs_cri
     )
     
     if inno_res:
-        # Short circuit: return 0's for scores and "passed" for all structural labels, assigning "Chronic" as final label
-        return [prefix, 0, 0, "passed", 0, 0, "passed", "Chronic", 0]
+        # Short circuit: return NA's for scores and "Skipped" for all structural labels, assigning "Chronic" as final label
+        return [prefix, "NA", "NA", "Skipped", "NA", "NA", "Skipped", "Chronic", "NA"]
 
     # --- Step 2: Proceed With Structural Alignments if Not Chronic ---
     pfam_label, bc_label, final_label = "Unclassified", "Unclassified", "Unclassified"
@@ -317,7 +317,9 @@ def bayes_classifier_single(inputfile, prefix, wd, hmm_criteria=1e-5, mmseqs_cri
 
     if inte_label or excision_label:
         pfam_label = "Temperate"
-
+    else:
+        pfam_label = "Virulent"
+        
     bc_mmseqsDB = os.path.join(fileDir, "db/bayes_mmseqs_index/training_prot_04_2025")
     mmseqs_wd = os.path.join(wd, "BC_mmseqs")
     mmseq_opt = runMmseqsEasysearch(inputfile, f"{prefix}.BC_mmseqs", mmseqs_wd, bc_mmseqsDB, otherPara=mmseqs_para)
