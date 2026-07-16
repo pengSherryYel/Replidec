@@ -157,7 +157,7 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", thr
         for contig_id in contig_lengths.keys():
             # Apply hard overrides to Chronic short-circuited contigs
             if contig_id in chronic_contigs:
-                row = [contig_id, 0, 0, "passed", 0, 0, "passed", "Chronic", 0]
+                row = [contig_id, "NA", "NA", "Skipped", "NA", "NA", "Skipped", "Chronic", "NA"]
                 opt.write("\t".join(str(x) for x in row) + "\n")
                 processed_count += 1
                 continue
