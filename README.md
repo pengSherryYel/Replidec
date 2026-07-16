@@ -95,6 +95,10 @@ If you want to redownload the database, the `-d` parameter can be used. The olde
 
 ## Usage: Input (-i) and program (-p)
 
+##**IMPORTANT**## 
+<br>
+RepliDec assumes that all input contigs are either complete or partial phage genomes. Please ensure you pass your contigs through a viral discovery tool to exclude non-phage sequences to ensure accurate results.
+
 **The input file is different based on different programs**
 
 Replidec offers **3** different programs:
