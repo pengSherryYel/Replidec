@@ -284,9 +284,24 @@ def bayes_classifier_single(inputfile, prefix, wd, hmm_criteria=1e-5, mmseqs_cri
     Retained to support alternative processing workflows.
     """
     mkdirs(wd)
-    pfam_label, bc_label, final_label = "Unclassified", "Unclassified", "Unclassified"
     fileDir = os.path.dirname(os.path.abspath(__file__))
 
+    # --- Step 1: Pre-Screen for Chronic Markers to Short-Circuit Early ---
+    inno_hmmDB = os.path.join(fileDir, "db/Final_marker_morph.hmm")
+    inno_blastPre = os.path.join(fileDir, "db/Marker_ALV1")
+    inno_dect_wd = os.path.join(wd, "BC_Inno")
+
+    inno_res = inoviruses_PI_like_gene_search(
+        inputfile, f"{prefix}.Inno", inno_dect_wd, inno_hmmDB, inno_blastPre,
+        hmm_evalue=blastp_criteria, blastp_evalue=blastp_criteria, blastp_para=blastp_para, hmmer_para=hmmer_para
+    )
+    
+    if inno_res:
+        # Short circuit: return NA's for scores and "Skipped" for all structural labels, assigning "Chronic" as final label
+        return [prefix, "NA", "NA", "Skipped", "NA", "NA", "Skipped", "Chronic", "NA"]
+
+    # --- Step 2: Proceed With Structural Alignments if Not Chronic ---
+    pfam_label, bc_label, final_label = "Unclassified", "Unclassified", "Unclassified"
     integrase_hmm = os.path.join(fileDir, "db/integrase_pfv34.hmm")
     excisionase_hmm = os.path.join(fileDir, "db/excisionase_pfv34.hmm")
 
@@ -302,7 +317,9 @@ def bayes_classifier_single(inputfile, prefix, wd, hmm_criteria=1e-5, mmseqs_cri
 
     if inte_label or excision_label:
         pfam_label = "Temperate"
-
+    else:
+        pfam_label = "Virulent"
+        
     bc_mmseqsDB = os.path.join(fileDir, "db/bayes_mmseqs_index/training_prot_04_2025")
     mmseqs_wd = os.path.join(wd, "BC_mmseqs")
     mmseq_opt = runMmseqsEasysearch(inputfile, f"{prefix}.BC_mmseqs", mmseqs_wd, bc_mmseqsDB, otherPara=mmseqs_para)
@@ -315,17 +332,10 @@ def bayes_classifier_single(inputfile, prefix, wd, hmm_criteria=1e-5, mmseqs_cri
 
     if pfam_label == "Temperate" or bc_label == "Temperate":
         final_label = "Temperate"
-
-    inno_hmmDB = os.path.join(fileDir, "db/Final_marker_morph.hmm")
-    inno_blastPre = os.path.join(fileDir, "db/Marker_ALV1")
-    inno_dect_wd = os.path.join(wd, "BC_Inno")
-
-    inno_res = inoviruses_PI_like_gene_search(
-        inputfile, f"{prefix}.Inno", inno_dect_wd, inno_hmmDB, inno_blastPre,
-        hmm_evalue=blastp_criteria, blastp_evalue=blastp_criteria, blastp_para=blastp_para, hmmer_para=hmmer_para
-    )
-    if inno_res:
-        final_label = "Chronic"
+    elif pfam_label == "Virulent" and bc_label == "Unclassified":
+        final_label = "Unclassified"
+    else:
+        final_label = "Virulent"
 
     return [prefix, inte_label, excision_label, pfam_label, p_total_temperate, p_total_lytic, bc_label, final_label,
             match_gene_number]

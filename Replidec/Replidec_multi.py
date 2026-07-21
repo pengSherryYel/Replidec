@@ -44,8 +44,6 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", thr
     mkdirs(wd)
 
     # --- Thread Injection Logic ---
-    # We dynamically intercept or append the master --threads configuration flag
-    # into the underlying string parameters to guarantee underlying binary compliance.
     if '--threads' in mmseqs_para:
         mmseqs_para = re.sub(r'--threads\s+\d+', f'--threads {threads}', mmseqs_para)
     else:
@@ -66,7 +64,6 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", thr
     sanitized_fasta = os.path.join(wd, "all_contigs_sanitized.fna")
     contig_lengths = {}
 
-    # Standardize header IDs: replace pipeline breaking pipe characters '|' with clean underscores
     with open(sanitized_fasta, "w") as out_f:
         for record in SeqIO.parse(inputfile, "fasta"):
             clean_id = record.id.replace("|", "_")
@@ -75,7 +72,6 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", thr
             contig_lengths[clean_id] = len(record.seq)
             SeqIO.write(record, out_f, "fasta")
 
-    # Run Prodigal in Meta mode to fast-track parallel ORF gene calls across all contigs
     prodigal_wd = os.path.join(wd, "BC_prodigal")
     master_faa = runProdigal(sanitized_fasta, "all_contigs", prodigal_wd, program="meta", otherPara="-g 11")
 
@@ -83,7 +79,6 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", thr
         print(f"{_get_timestamp()} [WARNING] No proteins predicted. Exiting workflow cleanly.")
         return
 
-    # Create mapping matrix correlating every predicted ORF back to its parental source contig
     protein_to_contig = {}
     contig_to_proteins = {cid: [] for cid in contig_lengths.keys()}
     for record in SeqIO.parse(master_faa, "fasta"):
@@ -94,30 +89,8 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", thr
                 protein_to_contig[record.id] = contig_id
                 contig_to_proteins[contig_id].append(record.id)
 
-    # --- Phase 2: Vectorized Alignment against Structural Profiles ---
-    print(f"{_get_timestamp()} [INFO] Launching vectorized HMMER and MMseqs2 structural profiles...")
-    pfam_wd = os.path.join(wd, "BC_pfam")
-    integrase_hmm = os.path.join(fileDir, DATABASE_MANIFEST["integrase_hmm"])
-    excisionase_hmm = os.path.join(fileDir, DATABASE_MANIFEST["excisionase_hmm"])
-
-    inte_opt = runHmmsearch(master_faa, "all_contigs.BC_integrase", pfam_wd, integrase_hmm, hmmer_para)
-    excision_opt = runHmmsearch(master_faa, "all_contigs.BC_excisionase", pfam_wd, excisionase_hmm, hmmer_para)
-
-    # Process alignment results straight into high-speed memory lookups (O(1) lookups)
-    inte_anno = load_hmmsearch_opt_batched(inte_opt, criteria=hmm_criteria)
-    excision_anno = load_hmmsearch_opt_batched(excision_opt, criteria=hmm_criteria)
-
-    bc_mmseqsDB = os.path.join(fileDir, DATABASE_MANIFEST["mmseqs_index"])
-    mmseqs_wd = os.path.join(wd, "BC_mmseqs")
-    mmseq_opt = runMmseqsEasysearch(master_faa, "all_contigs.BC_mmseqs", mmseqs_wd, bc_mmseqsDB, otherPara=mmseqs_para)
-    mmseq_hits = load_m8_fmt_opt(mmseq_opt, criteria=mmseqs_criteria)
-
-    score_file = os.path.join(fileDir, DATABASE_MANIFEST["scoring_matrix"])
-    score_matrix = load_scoreD(score_file)
-    p_prior_temperate, p_prior_lytic = score_matrix.get("Prior_probability", [0.0, 0.0])
-
-    # --- Phase 3: Vectorized Chronic Inovirus Marker Screening ---
-    print(f"{_get_timestamp()} [INFO] Screening consolidated protein catalog for Chronic Inovirus elements...")
+    # --- Phase 2: Vectorized Chronic Inovirus Marker Screening (Moved Up) ---
+    print(f"{_get_timestamp()} [INFO] Phase 2: Screening for Chronic Inovirus elements...")
     inno_wd = os.path.join(wd, "BC_Inno")
     inno_hmmDB = os.path.join(fileDir, DATABASE_MANIFEST["inovirus_hmm"])
     inno_blastPre = os.path.join(fileDir, DATABASE_MANIFEST["inovirus_blast"])
@@ -128,6 +101,47 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", thr
 
     inno_hmm_opt = runHmmsearch(master_faa, "all_contigs.Inno", inno_wd, inno_hmmDB, hmmer_para)
     inno_hmm_hits = load_hmmsearch_opt_batched(inno_hmm_opt, float(blastp_criteria))
+
+    # Identify contigs that hit as Chronic
+    chronic_contigs = set()
+    for contig_id, proteins in contig_to_proteins.items():
+        if any(p in inno_blast_hits or p in inno_hmm_hits for p in proteins):
+            chronic_contigs.add(contig_id)
+
+    # Short-circuit logic: create a filtered protein FASTA containing only non-chronic targets
+    filtered_faa = os.path.join(prodigal_wd, "non_chronic_contigs.faa")
+    non_chronic_count = 0
+    with open(filtered_faa, "w") as out_f:
+        for record in SeqIO.parse(master_faa, "fasta"):
+            contig_id = protein_to_contig.get(record.id)
+            if contig_id not in chronic_contigs:
+                SeqIO.write(record, out_f, "fasta")
+                non_chronic_count += 1
+
+    # --- Phase 3: Vectorized Alignment against Structural Profiles ---
+    inte_anno, excision_anno, mmseq_hits = {}, {}, {}
+    
+    if non_chronic_count > 0:
+        print(f"{_get_timestamp()} [INFO] Phase 3: Launching HMMER and MMseqs2 structural profiles for remaining contigs...")
+        pfam_wd = os.path.join(wd, "BC_pfam")
+        integrase_hmm = os.path.join(fileDir, DATABASE_MANIFEST["integrase_hmm"])
+        excisionase_hmm = os.path.join(fileDir, DATABASE_MANIFEST["excisionase_hmm"])
+
+        # Run tools strictly on the filtered, non-chronic FASTA
+        inte_opt = runHmmsearch(filtered_faa, "all_contigs.BC_integrase", pfam_wd, integrase_hmm, hmmer_para)
+        excision_opt = runHmmsearch(filtered_faa, "all_contigs.BC_excisionase", pfam_wd, excisionase_hmm, hmmer_para)
+
+        inte_anno = load_hmmsearch_opt_batched(inte_opt, criteria=hmm_criteria)
+        excision_anno = load_hmmsearch_opt_batched(excision_opt, criteria=hmm_criteria)
+
+        bc_mmseqsDB = os.path.join(fileDir, DATABASE_MANIFEST["mmseqs_index"])
+        mmseqs_wd = os.path.join(wd, "BC_mmseqs")
+        mmseq_opt = runMmseqsEasysearch(filtered_faa, "all_contigs.BC_mmseqs", mmseqs_wd, bc_mmseqsDB, otherPara=mmseqs_para)
+        mmseq_hits = load_m8_fmt_opt(mmseq_opt, criteria=mmseqs_criteria)
+
+    score_file = os.path.join(fileDir, DATABASE_MANIFEST["scoring_matrix"])
+    score_matrix = load_scoreD(score_file)
+    p_prior_temperate, p_prior_lytic = score_matrix.get("Prior_probability", [0.0, 0.0])
 
     # --- Phase 4: Scoring Matrix Assembly & Final Report Output ---
     print(f"{_get_timestamp()} [INFO] Assembling scoring matrices and writing global execution summary...")
@@ -141,9 +155,16 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", thr
         opt.write(header)
 
         for contig_id in contig_lengths.keys():
+            # Apply hard overrides to Chronic short-circuited contigs
+            if contig_id in chronic_contigs:
+                row = [contig_id, "NA", "NA", "Skipped", "NA", "NA", "Skipped", "Chronic", "NA"]
+                opt.write("\t".join(str(x) for x in row) + "\n")
+                processed_count += 1
+                continue
+
+            # Process remaining non-chronic contigs normally
             proteins = contig_to_proteins[contig_id]
 
-            # Assess core structural markers
             inte_count = sum(1 for p in proteins if p in inte_anno)
             excision_count = sum(1 for p in proteins if p in excision_anno)
             pfam_label = "Temperate" if (inte_count > 0 or excision_count > 0) else "Virulent"
@@ -152,7 +173,6 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", thr
             p_lytic = [p_prior_lytic]
             match_gene_number = 0
 
-            # Accumulate Naive Bayes scores for predicted proteins
             for p in proteins:
                 if p in mmseq_hits:
                     match_gene_number += 1
@@ -163,9 +183,7 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", thr
                             p_temperate.append(pt)
                             p_lytic.append(pl)
 
-            # Compute log-likelihood labels
             if len(p_temperate) == 1:
-                # If no proteins match the db
                 p_total_temperate, p_total_lytic = 0.0, 0.0
                 bc_label = "Unclassified"
             else:
@@ -178,18 +196,12 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", thr
                 else:
                     bc_label = "Unclassified"
 
-            # Resolve overlapping prediction properties
             if pfam_label == "Virulent" and bc_label == "Unclassified":
                 final_label = "Unclassified"
             elif pfam_label == "Temperate" or bc_label == "Temperate":
                 final_label = "Temperate"
             else:
                 final_label = "Virulent"
-
-            # Overlay Chronic lifestyle flag if Inovirus indicators are caught
-            has_inno = any(p in inno_blast_hits or p in inno_hmm_hits for p in proteins)
-            if has_inno:
-                final_label = "Chronic"
 
             row = [contig_id, inte_count, excision_count, pfam_label, p_total_temperate, p_total_lytic, bc_label,
                    final_label, match_gene_number]
@@ -224,7 +236,6 @@ def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary", thre
         with open(inputfile) as f:
             for line in f:
                 sample_name, path = line.strip("\n").split("\t")
-                # REMOVED: time.sleep(10) bottleneck which artificially slowed down multi-sample benchmarks
                 all_task.append(executor.submit(bayes_classifier_single, path, sample_name, wd, **kwargsD))
 
             for future in as_completed(all_task):
@@ -256,13 +267,11 @@ def bayes_classifier_genomes(inputfile, wd, summaryfile="BC_predict.summary", th
         with open(inputfile) as f:
             for line in f:
                 sample_name, path = line.strip("\n").split("\t")
-                # Perform gene calls independently per genome workspace
                 faaFile = runProdigal(path, sample_name, f"{wd}/BC_prodigal", program="meta", otherPara="-g 11")
                 faaDict[sample_name] = faaFile
 
             for sample_name, faaFile in faaDict.items():
                 if os.path.getsize(faaFile) != 0:
-                    # REMOVED: time.sleep(10) bottleneck which introduced dead stalls during task parsing
                     all_task.append(executor.submit(bayes_classifier_single, faaFile, sample_name, wd, **kwargsD))
 
             for future in as_completed(all_task):
