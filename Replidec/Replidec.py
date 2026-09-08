@@ -14,8 +14,8 @@ from Replidec.utility import mkdirs, checkEnv
 
 # Master remote references pointing to static versioned database checkpoints
 DATABASE_MANIFEST = {
-    "version": "0.3.2",
-    "url": "https://zenodo.org/records/15781219/files/db_v0.3.2.tar.gz",
+    "version": "0.3.3",
+    "url": "https://zenodo.org/records/22178169/files/db_v0.3.3.tgz",
     "integrase_hmm": "db/integrase_pfv34.hmm",
     "excisionase_hmm": "db/excisionase_pfv34.hmm",
     "mmseqs_index": "db/bayes_mmseqs_index/training_prot_04_2025",
