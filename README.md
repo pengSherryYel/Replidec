@@ -170,11 +170,7 @@ At the end of the analysis, the output directory would contain the following:
 
     * bc_label: if bc_temperate greater than bc_virulent, label will be "Temperate". Otherwise "Virulent".
 
-<<<<<<< HEAD
-    * final_label: if pfam_label and bc_label both is Temperate, then label will be "Temperate"; if an Innovirues marker gene exists, then label will be "Chronic"; otherwise "Virulent".
-=======
     * final_label: if an Inovirus marker gene exists, then the NB classifier is bypassed, and the label will be "Chronic”; otherwise, if either pfam_label or bc_label is “Temperate", then the label will be "Temperate";  otherwise “Virulent”.
->>>>>>> def1ca5 (UPDATE: README final label des)
 
     * match_gene_number:  the number of genes mapped to our custom database.
 
