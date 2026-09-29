@@ -44,6 +44,30 @@ If you install using pip, please make sure that `mmseqs`, `hmmsearch`, and `blas
 ```bash
 pip3 install Replidec
 ```
+## Quick Start
+
+Check that Replidec is available:
+
+```bash
+Replidec -h
+```
+
+**Input requirement:** Input sequences must already be identified as
+phage genomes or contigs. Exclude non-phage sequences before running
+RepliDec.
+
+Run predictions on a FASTA file containing phage nucleotide sequences:
+
+```bash
+Replidec -p multi_fasta -i viral_contigs.fasta -w results
+```
+
+Each FASTA sequence is treated as one virus. The reference database
+is downloaded automatically when needed.
+
+Results are saved to `results/prediction_summary.tsv`. The
+`final_label` column reports the final prediction: `Chronic`,
+`Temperate`, or `Virulent`.
 
 ## Usage: Overview
 
@@ -170,10 +194,16 @@ At the end of the analysis, the output directory would contain the following:
 
     * bc_label: if bc_temperate greater than bc_virulent, label will be "Temperate". Otherwise "Virulent".
 
-    * final_label: if an Inovirus marker gene exists, then the NB classifier is bypassed, and the label will be "Chronic”; otherwise, if either pfam_label or bc_label is “Temperate", then the label will be "Temperate";  otherwise “Virulent”.
-
+    * final_label: the final prediction, assigned in the following order:
+        1. Detection of inovirus-associated markers results in a `Chronic` prediction.
+        2. Otherwise, detection of lysogeny-associated markers results in a `Temperate` prediction.
+        3. Sequences without these markers are classified as `Temperate` or `Virulent` by the Naïve Bayes classifier.
+    
     * match_gene_number:  the number of genes mapped to our custom database.
 
+**Scope and limitations:** 
+RepliDec predicts three categories (virulent, temperate, and chronic)
+and does not currently predict other phage–host states.
 
 ## Example (Data in test folder, please navigate to test folder first)
 ```
@@ -193,7 +223,11 @@ replidec -p protein_table -i example/example.small.list -w opt_folder_protein_ta
 ## Docker
 docker run -v /Your_path_clone_replidec/Replidec/test:/data/ quay.io/biocontainers/replidec:0.3.5--pyhdfd78af_0 Replidec -p multi_fasta -i /data/example/test.contig.small.new.fa -w /data/opt_folder_docker_multi_fasta
 ```
+## Related tool: RepliDecPlus
 
+[RepliDecPlus](https://github.com/pengSherryYel/ReplidecPlus) is a
+separate pipeline that combines predictions from RepliDec, BACPHLIP,
+DeePhage, and PhaBOX/PhaTYP using a weighted scoring system.
 
 ## Issues
 ### Database can not be downloaded automatically 
