@@ -68,7 +68,7 @@ def main():
                         help="E-value threshold to filter blastp results (default = 1e-5)")
 
     parser.add_argument("-c", "--blastp_Score", default=50, type=float, metavar="", dest="blastp_Score_threshold",
-                            help="Score threshold to filter blastp results (default = 30) for chronic")
+                            help="Score threshold to filter blastp results (default = 50) for chronic")
 
     parser.add_argument("-B", "--blastp_parameter", default="", metavar="", dest="blastp_parameters",
                         help="Parameters used for blastp alignment processes")
