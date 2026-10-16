@@ -140,8 +140,29 @@ def load_hmmsearch_opt(hmmsearch_opt, criteria=1e-5):
                     annoD[target_name][accession] = query_name
         return annoD
 
+def load_hmmsearch_opt_chronic(hmmsearch_opt, criteria=30):
+    """
+    Parses sequential single-sample HMMER --tblout files, this is for the chronic
+    This is used in the bayes_classifier_single 
+    """
+    annoD = defaultdict(dict)
+    if not os.path.exists(hmmsearch_opt):
+        return annoD
+    with open(hmmsearch_opt) as f:
+        for line in f:
+            if not line.startswith("#"):
+                t = re.split(r"\s+", line.strip("\n"))
+                if len(t) < 5:
+                    continue
+                target_name, _, query_name, _, Evalue, Score, *rest = t
+                # bst_Evalue = rest[1] if len(rest) > 2 else Evalue
+                accession = t[3].split(".")[0]
 
-def load_hmmsearch_opt_batched(hmmsearch_opt, criteria=1e-5):
+                if float(Score) >= float(criteria):
+                    annoD[target_name][accession] = query_name
+        return annoD
+
+def load_hmmsearch_opt_batched(hmmsearch_opt, criteria=30):
     """
     High-speed parser for batch/consolidated HMMER tabular outputs.
     Extracts column 1 (target protein sequence identifiers) into an optimized set.
@@ -166,6 +187,31 @@ def load_hmmsearch_opt_batched(hmmsearch_opt, criteria=1e-5):
 
     return hit_proteins
 
+def load_hmmsearch_opt_batched_chronic(hmmsearch_opt, criteria=30):
+    """
+    High-speed parser for batch/consolidated HMMER tabular outputs for Chronic.
+    Extracts column 1 (target protein sequence identifiers) into an optimized set.
+    This is used in the bayes_classifier_contig::
+    """
+    hit_proteins = set()
+    if not os.path.exists(hmmsearch_opt):
+        return hit_proteins
+
+    with open(hmmsearch_opt) as f:
+        for line in f:
+            if line.startswith("#"):
+                continue
+            t = re.split(r"\s+", line.strip("\n"))
+            if len(t) < 5:
+                continue
+
+            # Column mapping: t[0] yields target sequence ID, t[2] holds query matrix name
+            target_name, _, query_name, _, Evalue, Score = t[:6]
+
+            if float(Score) >= float(criteria):
+                hit_proteins.add(target_name)
+
+    return hit_proteins
 
 def load_m8_fmt_opt(m8_input, criteria=1e-5):
     """
@@ -185,6 +231,23 @@ def load_m8_fmt_opt(m8_input, criteria=1e-5):
                         d[query] = [ref, evalue]
     return d
 
+def load_m8_fmt_opt_chronic(m8_input, criteria=50):
+    """
+    Parses blastp / mmseqs2 blast-style m8 (-outfmt 6) layout structures.
+    Filters by E-value and maps query sequences to their top hit reference IDs.
+    """
+    d = {}
+    if os.path.exists(m8_input):
+        with open(m8_input) as f:
+            for line in f:
+                parts = line.strip("\n").split("\t")
+                if len(parts) < 11:
+                    continue
+                query, ref, _, _, _, _, _, _, _, _, evalue, bitscore = parts[:12]
+                if float(bitscore) >= criteria:
+                    if query not in d or float(bitscore) < float(d[query][-1]):
+                        d[query] = [ref, bitscore]
+    return d
 
 def calculate_score(mmseqOpt, scoreD, criteria=1e-5):
     """
@@ -226,14 +289,17 @@ def calculate_score(mmseqOpt, scoreD, criteria=1e-5):
     return p_total_temperate, p_total_lytic, label, match_gene_number
 
 
-def inoviruses_PI_like_gene_search(inputfile, prefix, wd, hmmdb, blastdb_prefix, hmm_evalue="1e-3",
-                                   blastp_evalue="1e-3", blastp_para="-num_threads 3", hmmer_para="--noali --cpu 1"):
+def inoviruses_PI_like_gene_search(inputfile, prefix, wd, hmmdb, blastdb_prefix, 
+                                   hmm_evalue="1e-3", hmm_score=30,
+                                   blastp_evalue="1e-3", blastp_score=50, 
+                                   blastp_para="-num_threads 3", 
+                                   hmmer_para="--noali --cpu 1"):
     """Detects chronic Inovirus signature sequences using single-sample profiles."""
     inovBlastpOpt = runBlastpsearch(inputfile, prefix, wd, blastdb_prefix, evalue=blastp_evalue, otherPara=blastp_para)
-    innoBlastD = load_m8_fmt_opt(inovBlastpOpt, float(blastp_evalue))
+    innoBlastD = load_m8_fmt_opt_chronic(inovBlastpOpt, float(blastp_score))
 
     innoHmmerOpt = runHmmsearch(inputfile, prefix, wd, hmmdb, otherPara=hmmer_para)
-    innoHmmerD = load_hmmsearch_opt(innoHmmerOpt, float(hmm_evalue))
+    innoHmmerD = load_hmmsearch_opt_chronic(innoHmmerOpt, float(hmm_score))
 
     return bool(innoBlastD or innoHmmerD)
 
@@ -276,8 +342,12 @@ def checkdb_and_download(scriptPos, redownload=False):
         print(f"{_get_timestamp()} [INFO] Database verified.")
 
 
-def bayes_classifier_single(inputfile, prefix, wd, hmm_criteria=1e-5, mmseqs_criteria=1e-5, blastp_criteria=1e-3,
-                            blastp_para="-num_threads 3", hmmer_para="--noali --cpu 3",
+def bayes_classifier_single(inputfile, prefix, wd, 
+                            hmm_criteria=1e-5, hmm_score=30, 
+                            mmseqs_criteria=1e-5, 
+                            blastp_criteria=1e-3, blastp_score=50, 
+                            blastp_para="-num_threads 3", 
+                            hmmer_para="--noali --cpu 3",
                             mmseqs_para="-s 7 --max-seqs 1 --alignment-mode 3 --alignment-output-mode 0 --min-aln-len 40 --cov-mode 0 --greedy-best-hits 1 --threads 3"):
     """
     Processes single-sample lifestyle predictions.
@@ -293,7 +363,10 @@ def bayes_classifier_single(inputfile, prefix, wd, hmm_criteria=1e-5, mmseqs_cri
 
     inno_res = inoviruses_PI_like_gene_search(
         inputfile, f"{prefix}.Inno", inno_dect_wd, inno_hmmDB, inno_blastPre,
-        hmm_evalue=blastp_criteria, blastp_evalue=blastp_criteria, blastp_para=blastp_para, hmmer_para=hmmer_para
+        hmm_evalue=blastp_criteria, hmm_score=hmm_score,
+        blastp_evalue=blastp_criteria, 
+        blastp_para=blastp_para, blastp_score=blastp_score,
+        hmmer_para=hmmer_para                
     )
     
     if inno_res:

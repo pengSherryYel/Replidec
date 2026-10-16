@@ -12,7 +12,7 @@ import sys
 def mkdirs(dirname):
     '''Safely creates output directories if they do not already exist.'''
     if not os.path.exists(dirname):
-        os.makedirs(dirname)
+        os.makedirs(dirname, exist_ok=True)
 
 
 def checkEnv(sft):

@@ -19,14 +19,16 @@ from Replidec.Replidec import (
     runBlastpsearch,
     load_scoreD,
     load_hmmsearch_opt_batched,
+    load_hmmsearch_opt_batched_chronic,
     load_m8_fmt_opt,
-    bayes_classifier_single
+    load_m8_fmt_opt_chronic,
+    bayes_classifier_single,
 )
 from Replidec.utility import mkdirs
 
 
 def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", threads=4,
-                            hmm_criteria=1e-5, mmseqs_criteria=1e-5, blastp_criteria=1e-5,
+                            hmm_criteria=1e-5, hmm_score=30, mmseqs_criteria=1e-5, blastp_criteria=1e-5, blastp_score=50,
                             blastp_para="", hmmer_para="", mmseqs_para=""):
     '''
     Aim: High-speed single-pass batch prediction for multi-FASTA contig files.
@@ -95,12 +97,18 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", thr
     inno_hmmDB = os.path.join(fileDir, DATABASE_MANIFEST["inovirus_hmm"])
     inno_blastPre = os.path.join(fileDir, DATABASE_MANIFEST["inovirus_blast"])
 
+    ## use bitscore to filter the chronic marker gene. 
     inno_blast_opt = runBlastpsearch(master_faa, "all_contigs.Inno", inno_wd, inno_blastPre,
                                      evalue=str(blastp_criteria), otherPara=blastp_para)
-    inno_blast_hits = load_m8_fmt_opt(inno_blast_opt, float(blastp_criteria))
+    # inno_blast_hits = load_m8_fmt_opt(inno_blast_opt, float(blastp_criteria))
+    inno_blast_hits = load_m8_fmt_opt_chronic(inno_blast_opt, float(blastp_score))
+
 
     inno_hmm_opt = runHmmsearch(master_faa, "all_contigs.Inno", inno_wd, inno_hmmDB, hmmer_para)
-    inno_hmm_hits = load_hmmsearch_opt_batched(inno_hmm_opt, float(blastp_criteria))
+    # inno_hmm_hits = load_hmmsearch_opt_batched(inno_hmm_opt, float(blastp_criteria))
+    inno_hmm_hits = load_hmmsearch_opt_batched_chronic(inno_hmm_opt, float(hmm_score))
+
+    
 
     # Identify contigs that hit as Chronic
     chronic_contigs = set()
@@ -217,8 +225,10 @@ def bayes_classifier_contig(inputfile, wd, summaryfile="BC_predict.summary", thr
 
 
 def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary", threads=10,
-                           hmm_criteria=1e-5, mmseqs_criteria=1e-5, blastp_criteria=1e-5,
-                           blastp_para="", hmmer_para="", mmseqs_para=""):
+                           hmm_criteria=1e-5, hmm_score=30, 
+                           mmseqs_criteria=1e-5, 
+                           blastp_criteria=1e-5, blastp_score=50, 
+                           blastp_para="", hmmer_para="", mmseqs_para="", ):
     '''
     Aim: Multithreaded engine execution for index data tables mapping pre-computed protein FAA listings.
     '''
@@ -232,8 +242,9 @@ def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary", thre
 
         executor = ThreadPoolExecutor(max_workers=threads)
         all_task = []
-        kwargsD = {"hmm_criteria": hmm_criteria, "mmseqs_criteria": mmseqs_criteria, "blastp_criteria": blastp_criteria,
-                   "blastp_para": blastp_para, "hmmer_para": hmmer_para, "mmseqs_para": mmseqs_para}
+        kwargsD = {"hmm_criteria": hmm_criteria, "hmmer_para": hmmer_para, "hmm_score":hmm_score, 
+                   "mmseqs_criteria": mmseqs_criteria, "mmseqs_para": mmseqs_para,
+                   "blastp_criteria": blastp_criteria, "blastp_para": blastp_para, "blastp_score": blastp_score}
 
         with open(inputfile) as f:
             for line in f:
@@ -247,8 +258,10 @@ def bayes_classifier_batch(inputfile, wd, summaryfile="BC_predict.summary", thre
 
 
 def bayes_classifier_genomes(inputfile, wd, summaryfile="BC_predict.summary", threads=10,
-                             hmm_criteria=1e-5, mmseqs_criteria=1e-5, blastp_criteria=1e-5,
-                             blastp_para="", hmmer_para="", mmseqs_para=""):
+                             hmm_criteria=1e-5, hmm_score=30, 
+                             mmseqs_criteria=1e-5, 
+                             blastp_criteria=1e-5, blastp_score=50, 
+                             blastp_para="", hmmer_para="", mmseqs_para="",):
     '''
     Aim: Multithreaded engine execution for structured tables mapping whole genome assembly configurations.
     '''
@@ -262,8 +275,9 @@ def bayes_classifier_genomes(inputfile, wd, summaryfile="BC_predict.summary", th
 
         executor = ThreadPoolExecutor(max_workers=threads)
         all_task = []
-        kwargsD = {"hmm_criteria": hmm_criteria, "mmseqs_criteria": mmseqs_criteria, "blastp_criteria": blastp_criteria,
-                   "blastp_para": blastp_para, "hmmer_para": hmmer_para, "mmseqs_para": mmseqs_para}
+        kwargsD = {"hmm_criteria": hmm_criteria, "hmmer_para": hmmer_para, "hmm_score":hmm_score, 
+                   "mmseqs_criteria": mmseqs_criteria, "mmseqs_para": mmseqs_para,
+                   "blastp_criteria": blastp_criteria, "blastp_para": blastp_para, "blastp_score": blastp_score}
         faaDict = {}
 
         with open(inputfile) as f:
@@ -275,6 +289,7 @@ def bayes_classifier_genomes(inputfile, wd, summaryfile="BC_predict.summary", th
             for sample_name, faaFile in faaDict.items():
                 if os.path.getsize(faaFile) != 0:
                     all_task.append(executor.submit(bayes_classifier_single, faaFile, sample_name, wd, **kwargsD))
+
 
             for future in as_completed(all_task):
                 res = future.result()

@@ -51,6 +51,9 @@ def main():
     parser.add_argument("-e", "--hmmer_Eval", default=1e-5, type=float, metavar="", dest="hmmer_Evalue_threshold",
                         help="E-value threshold to filter hmmer results (default = 1e-5)")
 
+    parser.add_argument("-s", "--hmmer_Score", default=30, type=float, metavar="", dest="hmmer_Score_threshold",
+                        help="Score threshold to filter mmseqs2 results (default = 30) for chronic")
+
     parser.add_argument("-E", "--hmmer_parameters", default="--noali", metavar="", dest="hmmer_parameters",
                         help="Parameters used for hmmer execution (default = --noali)")
 
@@ -63,6 +66,9 @@ def main():
 
     parser.add_argument("-b", "--blastp_Eval", default=1e-5, type=float, metavar="", dest="blastp_Evalue_threshold",
                         help="E-value threshold to filter blastp results (default = 1e-5)")
+
+    parser.add_argument("-c", "--blastp_Score", default=50, type=float, metavar="", dest="blastp_Score_threshold",
+                            help="Score threshold to filter blastp results (default = 30) for chronic")
 
     parser.add_argument("-B", "--blastp_parameter", default="", metavar="", dest="blastp_parameters",
                         help="Parameters used for blastp alignment processes")
@@ -94,6 +100,7 @@ def main():
                                  summaryfile=args.file_name, threads=args.threads,
                                  hmm_criteria=args.hmmer_Evalue_threshold, mmseqs_criteria=args.mmseqs_Evalue_threshold,
                                  blastp_criteria=args.blastp_Evalue_threshold,
+                                 hmm_score=args.hmmer_Score_threshold, blastp_score=args.blastp_Evalue_threshold,
                                  hmmer_para=args.hmmer_parameters, mmseqs_para=args.mmseqs_parameters,
                                  blastp_para=args.blastp_parameters)
 
@@ -102,6 +109,7 @@ def main():
                                 summaryfile=args.file_name, threads=args.threads,
                                 hmm_criteria=args.hmmer_Evalue_threshold, mmseqs_criteria=args.mmseqs_Evalue_threshold,
                                 blastp_criteria=args.blastp_Evalue_threshold,
+                                hmm_score=args.hmmer_Score_threshold, blastp_score=args.blastp_Evalue_threshold,
                                 hmmer_para=args.hmmer_parameters, mmseqs_para=args.mmseqs_parameters,
                                 blastp_para=args.blastp_parameters)
 
@@ -110,6 +118,7 @@ def main():
                                summaryfile=args.file_name, threads=args.threads,
                                hmm_criteria=args.hmmer_Evalue_threshold, mmseqs_criteria=args.mmseqs_Evalue_threshold,
                                blastp_criteria=args.blastp_Evalue_threshold,
+                               hmm_score=args.hmmer_Score_threshold, blastp_score=args.blastp_Evalue_threshold,
                                hmmer_para=args.hmmer_parameters, mmseqs_para=args.mmseqs_parameters,
                                blastp_para=args.blastp_parameters)
 
