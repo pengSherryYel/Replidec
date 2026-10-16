@@ -75,8 +75,8 @@ Results are saved to `results/prediction_summary.tsv`. The
 Replidec [-p PROGRAM] [-i INPUT] [-w WORK_DIR] [-h HELP] [options]
 
 options:
-  -h , --help            show this help message and exit
-  -v , --version         show program's version number and exit
+  -h , --help           show this help message and exit
+  -v , --version        show program's version number and exit
   -p , --program        { multi_fasta | genome_table | protein_table }
                         
                         multi_fasta mode:
