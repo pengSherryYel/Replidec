@@ -75,8 +75,8 @@ Results are saved to `results/prediction_summary.tsv`. The
 Replidec [-p PROGRAM] [-i INPUT] [-w WORK_DIR] [-h HELP] [options]
 
 options:
-  -h, --help            show this help message and exit
-  -v, --version         show program's version number and exit
+  -h , --help            show this help message and exit
+  -v , --version         show program's version number and exit
   -p , --program        { multi_fasta | genome_table | protein_table }
                         
                         multi_fasta mode:
@@ -97,7 +97,7 @@ options:
   -n , --file_name      Name of final summary file (default = prediction_summary.tsv)
   -t , --threads        Number of parallel threads (default = 4)
   -e , --hmmer_Eval     E-value threshold to filter hmmer result (default = 1e-5)
-  -s, --hmmer_Score     Score threshold to filter mmseqs2 results (default = 30) for chronic
+  -s , --hmmer_Score     Score threshold to filter mmseqs2 results (default = 30) for chronic
   -E , --hmmer_parameters 
                         Parameters used for hmmer (default = --noali --cpu 3)
   -m , --mmseq_Eval     E-value threshold to filter mmseqs2 result (default = 1e-5)
@@ -105,10 +105,10 @@ options:
                         Parameter used for mmseqs
                         (default = -s 7 --max-seqs 1 --alignment-mode 3 --alignment-output-mode 0 --min-aln-len 40 --cov-mode 0 --greedy-best-hits 1 --threads 3)
   -b , --blastp_Eval    E-value threshold to filter blast result (default =1e-5)
-  -c, --blastp_Score    Score threshold to filter blastp results (default = 50) for chronic
+  -c , --blastp_Score    Score threshold to filter blastp results (default = 50) for chronic
   -B , --blastp_parameter 
                         Parameters used for blastp (default = -num_threads 3)
-  -d, --db_redownload   Remove and re-download database
+  -d , --db_redownload   Remove and re-download database
 ```
 
 ## Usage: Download database (-d)
