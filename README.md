@@ -24,10 +24,10 @@ conda install -c denglab -c conda-forge -c bioconda replidec
 ### Method 2: using Docker
 
 ```bash
-docker pull quay.io/biocontainers/replidec:0.3.5--pyhdfd78af_0
-docker run quay.io/biocontainers/replidec:0.3.5--pyhdfd78af_0 Replidec -h
+docker pull quay.io/biocontainers/replidec:0.3.7--pyhdfd78af_0
+docker run quay.io/biocontainers/replidec:0.3.7--pyhdfd78af_0 Replidec -h
 ## Example
-docker run -v /your/host/data:/data/ quay.io/biocontainers/replidec:0.3.5--pyhdfd78af_0 Replidec -i data/your_inputfile -p
+docker run -v /your/host/data:/data/ quay.io/biocontainers/replidec:0.3.7--pyhdfd78af_0 Replidec -i data/your_inputfile -p
 choose_mode_based_on_your_input_type -w data
 ```
 
