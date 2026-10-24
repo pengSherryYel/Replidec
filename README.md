@@ -198,8 +198,7 @@ At the end of the analysis, the output directory would contain the following:
 
     * final_label: the final prediction, assigned in the following order:
         1. Detection of inovirus-associated markers results in a `Chronic` prediction.
-        2. Otherwise, detection of lysogeny-associated markers results in a `Temperate` prediction.
-        3. Sequences without these markers are classified as `Temperate` or `Virulent` by the Naïve Bayes classifier.
+        2. Otherwise, the marker-based label (pfam_label) and Naïve Bayes label (bc_label) are combined using a logical OR: if either label is “Temperate,” the final prediction is “Temperate”; if neither is “Temperate,” the final prediction is “Virulent.”
     
     * match_gene_number:  the number of genes mapped to our custom database.
 
